@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from bird_models.pigeon import Pigeon
+import vision.environment_vision as env_vision
+import geometry.normalisation as gnormal
 
 """
 I am a pigeon. I am part of a flock. I am flying home.
@@ -46,22 +48,44 @@ class PigeonSimulator:
         head_heading = np.zeros((num_agents, 1))
         speeds = np.full((num_agents,1), self.bird_type.average_speed)
 
-        print(pos_xs)
-        print(pos_ys)
-        print(pos_hs)
-
         return np.column_stack([pos_xs, pos_ys, pos_hs, hierarchy, target_heading, head_heading, speeds])
-
-    def get_new_head_angles(self, agents, visual_feedback):
-        # TODO: implement NN to get new angle for head incl. head turn limits
-        return agents[:, 5]
-
-    def get_new_orientations(self, agents, visual_feedback):
+    
+    def compute_local_orders(self, orientations, perception_strengths):
         """
-        TODO: implement the new orientation for the pigeon based on the distance to its conspecifics that it can see
-        here we can either outright use AE or at least take inspiration from it
+        Computes the local order for every individual.
+
+        Params: 
+            - orientations (array of floats): the orientation of every individual at the current timestep
+            - neighbours (array of arrays of booleans): the identity of every neighbour of every individual
+
+        Returns:
+            An array of floats representing the local order for every individual at the current time step (values between 0 and 1)
         """
-        return agents[:,2]
+        uv_coordinates = self.compute_u_v_coordinates_for_angles(orientations)
+        sumOrientation = np.sum(perception_strengths[:,:,np.newaxis]*uv_coordinates[np.newaxis,:,:],axis=1)
+        perception_strengths = gnormal.normalise(values=perception_strengths)
+        perception_strengths[np.count_nonzero(perception_strengths, axis=1) == 0] = np.inf
+        return np.divide(np.sqrt(np.sum(sumOrientation**2,axis=1)), np.count_nonzero(perception_strengths, axis=1))
+    
+    def compute_comfortable_distance_matches(self, agents, perception_strengths):
+        distances = env_vision.compute_distances(agents=agents)
+        in_comfortable_distance_min = distances >= self.bird_type.preferred_distance_left_right[0]
+        in_comfortable_distance_max = distances <= self.bird_type.preferred_distance_left_right[1]
+        in_comfortable_distance = np.where(((in_comfortable_distance_min & in_comfortable_distance_max)), True, False)
+        return np.sum(perception_strengths*in_comfortable_distance)
+
+    def get_conspecific_alignment_cohesion(self, agents):
+        perception_strengths = env_vision.compute_perception_strengths_conspecifics(agents=agents, bird_type=self.bird_type)
+        local_orders = []
+        comfortable_distance_matches = []
+        for p_strength in perception_strengths:
+            local_orders.append(self.compute_local_orders(agents[:,2], perception_strengths=p_strength))
+            comfortable_distance_matches.append(self.compute_comfortable_distance_matches(agents=agents, perception_strengths=perception_strengths))
+        return perception_strengths, np.average(local_orders), np.average(comfortable_distance_matches)
+
+    def get_landmark_alignment(self, agents):
+        # TODO: landmark alignment
+        return 1
 
     def determine_visual_feedback(self, agents):
         """
@@ -70,7 +94,26 @@ class PigeonSimulator:
         each entity. Convert into a proximity and possibly alignment value for the neighbours, an alignment to
         the landmarks (i.e. the path home) and the proximity to predators
         """
-        return np.zeros((self.n, 2))
+
+        perception_strengths, conspec_alignment, conspec_cohesion = self.get_conspecific_alignment_cohesion(agents=agents)
+        landmark_alignment = self.get_landmark_alignment(agents=agents)
+        return perception_strengths, np.array([conspec_alignment, conspec_cohesion, landmark_alignment])
+
+    def get_new_head_angles(self, agents, visual_feedback):
+        # TODO: implement NN to get new angle for head incl. head turn limits
+        return agents[:, 5]
+
+    def get_new_orientations(self, agents, perception_strengths):
+        """
+        TODO: implement the new orientation for the pigeon based on the distance to its conspecifics that it can see
+        here we can either outright use AE or at least take inspiration from it
+        """
+        orientations = []
+        for p_strength in perception_strengths:
+            orient = np.sum(agents[:,np.newaxis, 2] * p_strength, axis=1)
+            orientations.append(orient)
+        orientations = np.array(orientations)
+        return np.average(orientations.T, axis=1)
 
     def compute_u_v_coordinates_for_angles(self, angles):
         """
@@ -87,6 +130,18 @@ class PigeonSimulator:
         V = np.sin(angles)
     
         return np.column_stack((U,V))
+    
+    def compute_angles_for_orientations(self, orientations):
+        """
+        Computes the angle in radians based on the (u,v)-coordinates of the current orientation.
+
+        Params:
+            - orientation (array of floats): the current orientation in (u,v)-coordinates
+
+        Returns:
+            A float representin the angle in radians.
+        """
+        return np.arctan2(orientations[:, 1], orientations[:, 0])
 
     def update_positions(self, agents):
         positions = np.column_stack([agents[:,0], agents[:,1]])
@@ -96,9 +151,9 @@ class PigeonSimulator:
         return agents
 
     def update_agents(self, agents):
-        visual_feedback = self.determine_visual_feedback(agents)
+        perception_strengths, visual_feedback = self.determine_visual_feedback(agents)
         agents = self.update_positions(agents=agents)
-        new_headings = self.get_new_orientations(agents=agents, visual_feedback=visual_feedback)
+        new_headings = self.get_new_orientations(agents=agents, perception_strengths=perception_strengths)
         new_head_headings = self.get_new_head_angles(agents=agents, visual_feedback=visual_feedback)
         agents[:, 2] = new_headings
         agents[:, 5] = new_head_headings

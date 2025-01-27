@@ -12,10 +12,5 @@ class Bird:
         self.preferred_distance_front_back = preferred_distance_front_back
         self.preferred_distance_left_right = preferred_distance_left_right
 
-    def set_landmarks(self, landmarks):
-        self.landmarks = landmarks
-
-    def set_random_subset_of_landmarks(self, landmarks, num_landmarks=None):
-        if num_landmarks == None:
-            num_landmarks = np.random.randint(1, len(landmarks))
-        self.set_landmarks(np.random.choice(landmarks, size=num_landmarks, replace=False))
+    def set_path(self, path):
+        self.path = path

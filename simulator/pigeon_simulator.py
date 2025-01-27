@@ -44,34 +44,65 @@ class PigeonSimulator:
         hierarchy = np.zeros((num_agents, 1))
         target_heading = np.zeros((num_agents, 1))
         head_heading = np.zeros((num_agents, 1))
+        speeds = np.full((num_agents,1), self.bird_type.average_speed)
 
         print(pos_xs)
         print(pos_ys)
         print(pos_hs)
 
-        self.agents = np.column_stack([pos_xs, pos_ys, pos_hs, hierarchy, target_heading, head_heading])
+        return np.column_stack([pos_xs, pos_ys, pos_hs, hierarchy, target_heading, head_heading, speeds])
 
-
-
-    def get_new_head_angles(self, visual_feedback):
+    def get_new_head_angles(self, agents, visual_feedback):
         # TODO: implement NN to get new angle for head incl. head turn limits
-        pass
+        return agents[:, 5]
 
-    def get_new_orientations(self):
+    def get_new_orientations(self, agents, visual_feedback):
         """
         TODO: implement the new orientation for the pigeon based on the distance to its conspecifics that it can see
         here we can either outright use AE or at least take inspiration from it
         """
-        pass
+        return agents[:,2]
 
-    def determine_visual_feedback(self):
+    def determine_visual_feedback(self, agents):
         """
         TODO: implement the visual feedback based on the neighbours, landmarks and possibly predators that the
         individual can see. Use the proximity to the focus direction to determine the strength of the input for
         each entity. Convert into a proximity and possibly alignment value for the neighbours, an alignment to
         the landmarks (i.e. the path home) and the proximity to predators
         """
-        pass
+        return np.zeros((self.n, 2))
+
+    def compute_u_v_coordinates_for_angles(self, angles):
+        """
+        Computes the (u,v)-coordinates based on the angle.
+
+        Params:
+            - angle (float): the angle in radians
+
+        Returns:
+            An array containing the [u, v]-coordinates corresponding to the angle.
+        """
+        # compute the uv-coordinates
+        U = np.cos(angles)
+        V = np.sin(angles)
+    
+        return np.column_stack((U,V))
+
+    def update_positions(self, agents):
+        positions = np.column_stack([agents[:,0], agents[:,1]])
+        positions += (self.compute_u_v_coordinates_for_angles(agents[:, 2]).T * agents[:, 6]).T
+        agents[:, 0] = positions[:, 0]
+        agents[:, 1] = positions[:, 1]
+        return agents
+
+    def update_agents(self, agents):
+        visual_feedback = self.determine_visual_feedback(agents)
+        agents = self.update_positions(agents=agents)
+        new_headings = self.get_new_orientations(agents=agents, visual_feedback=visual_feedback)
+        new_head_headings = self.get_new_head_angles(agents=agents, visual_feedback=visual_feedback)
+        agents[:, 2] = new_headings
+        agents[:, 5] = new_head_headings
+        return agents
 
     def simulate(self, tmax):
         """
@@ -83,8 +114,8 @@ class PigeonSimulator:
         also implement leadership
         """
         # TODO: possibly change tmax to the distance home once energy levels are included
-        self.init_swarm()
-        curr_agents = self.agents
+        curr_agents = self.init_swarm()
+
         fig, ax = plt.subplots()
         ax.set_facecolor((0, 0, 0))  
         centroid_x, centroid_y = np.mean(curr_agents[:, 0]), np.mean(curr_agents[:, 1])
@@ -92,7 +123,7 @@ class PigeonSimulator:
         ax.set_ylim(centroid_y - 5, centroid_y + 5)
         for t in range(tmax):
             new_agents = np.copy(curr_agents)
-            #update_agents()
+            self.update_agents(new_agents)
             curr_agents = np.copy(new_agents)  
 
             if (not (t % 5)) and (t > 0):
@@ -115,7 +146,7 @@ class PigeonSimulator:
                 """
                 ax.set_xlim(0, self.area.area_size[0])
                 ax.set_ylim(0, self.area.area_size[1])
-
+                
                 # Show the plot
                 plt.pause(0.000001)
 

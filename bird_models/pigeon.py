@@ -3,9 +3,9 @@ import numpy as np
 from bird_models.bird import Bird
 from bird_models.focus_area import FocusArea
 
-AVERAGE_SPEED = 97
-WINGSPAN = 67
-LENGTH = 26
+AVERAGE_SPEED = 27 # m/s
+WINGSPAN = 0.67 # meters
+LENGTH = 0.26 # meters
 HEAD_RANGE_HALF = np.deg2rad(180)
 PREFERRED_DISTANCE_FRONT_BACK = LENGTH + 10 # WARNING: THIS IS AN ASSUMPTION
 PREFERRED_DISTANCE_LEFT_RIGHT = WINGSPAN + 10  # WARNING: THIS IS AN ASSUMPTION

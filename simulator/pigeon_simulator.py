@@ -185,6 +185,16 @@ class PigeonSimulator:
                 # Clear the axes
                 ax.clear()
 
+                # Draw target area
+                target = plt.Circle(self.target_position, 0.1 * self.area.area_size[0], color='green')
+                ax.add_patch(target)
+
+                # Draw landmarks
+                landmark_positions = np.array([landmark.position for landmark in self.area.landmarks])
+                ax.scatter(landmark_positions[:, 0], landmark_positions[:, 1], color="yellow", s=15)
+                for i in range(len(landmark_positions)):
+                    ax.annotate(self.area.landmarks[i].name, (landmark_positions[i,0], landmark_positions[i,1]), color="white")
+
                 # Draw curr_agents as a scatter plot
                 ax.scatter(curr_agents[:, 0], curr_agents[:, 1], color="white", s=15)
 
@@ -194,6 +204,7 @@ class PigeonSimulator:
 
                 # Set plot properties
                 ax.set_facecolor((0, 0, 0))  # Set the background color to black
+                
                 """
                 centroid_x, centroid_y = np.mean(curr_agents[:, 0]), np.mean(curr_agents[:, 1])
                 ax.set_xlim(centroid_x - 5, centroid_x + 5)

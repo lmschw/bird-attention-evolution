@@ -11,8 +11,12 @@ def compute_distances(agents):
     rij = relative_positions[:,np.newaxis,:]-relative_positions   
     return np.sum(rij**2,axis=2)
 
-def compute_perception_strengths_conspecifics(agents, bird_type):
-    azimuth_angles_positions = aconv.get_relative_positions(agents=agents)
+def compute_distances_landmarks(agents, landmarks):
+    relative_positions = aconv.get_relative_positions_landmarks(agents=agents, landmarks=landmarks)
+    rij = relative_positions[:,np.newaxis,:]-relative_positions   
+    return np.sum(rij**2,axis=1)
+
+def compute_perception_strengths(azimuth_angles_positions, distances, bird_type, is_conspecifics=True):
     azimuth_angles_positions_pi = wrap_to_pi(azimuth_angles_positions)
     overall_perception_strengths = []
     min_distances = []
@@ -37,7 +41,6 @@ def compute_perception_strengths_conspecifics(agents, bird_type):
         # print(perception_strengths)
 
         # if the conspecific is not at a distance where the eye can comfortably focus, we set the strength to 0.1
-        distances = compute_distances(agents=agents)
         in_comfortable_distance_min = distances >= focus_area.comfortable_distance[0]
         in_comfortable_distance_max = distances <= focus_area.comfortable_distance[1]
         perception_strengths = np.where(((in_comfortable_distance_min & in_comfortable_distance_max) | (perception_strengths == 0)), perception_strengths, 0.1)
@@ -45,7 +48,8 @@ def compute_perception_strengths_conspecifics(agents, bird_type):
         # print(perception_strengths)
 
         # we set the agents' own perception strength to zero
-        np.fill_diagonal(perception_strengths, 0)
+        if is_conspecifics:
+            np.fill_diagonal(perception_strengths, 0)
         # print("diagonals removed:")
         # print(perception_strengths)
         overall_perception_strengths.append(perception_strengths)
@@ -57,19 +61,31 @@ def compute_perception_strengths_conspecifics(agents, bird_type):
 
     min_distances = np.concatenate(min_distances).T
     min_angles = np.concatenate(min_angles).T
-    min_dist_idx = np.argmin(min_distances, axis=1)
-    min_dist_idx = [[i, min_dist_idx[i]] for i in range(len(min_dist_idx))]
+    min_dist_idx_basic = np.argmin(min_distances, axis=1)
+    min_dist_idx = [[i, min_dist_idx_basic[i]] for i in range(len(min_dist_idx_basic))]
 
     min_dists_final = [min_distances[idx[0], idx[1]] for idx in min_dist_idx]
     min_angles_final = [min_angles[idx[0], idx[1]] for idx in min_dist_idx]
 
-    normalised_perception_strengths = normal.normalise(np.concatenate(overall_perception_strengths, axis=1))
+    if is_conspecifics:
+        normalised_perception_strengths = normal.normalise(np.concatenate(overall_perception_strengths, axis=1))
+    else:
+        normalised_perception_strengths = normal.normalise(np.concatenate(overall_perception_strengths, axis=0))
 
     num_agents = len(normalised_perception_strengths/len(bird_type.focus_areas))
     normalised_reshaped_perception_strengths = [normalised_perception_strengths[:, i * num_agents: (i+1) * num_agents] for i in range(len(bird_type.focus_areas))]
 
-    return normalised_reshaped_perception_strengths, (min_dists_final, min_angles_final)
+    return normalised_reshaped_perception_strengths, (min_dists_final, min_angles_final, min_dist_idx_basic)
 
+def compute_perception_strengths_conspecifics(agents, bird_type):
+    azimuth_angles_positions = aconv.get_relative_positions(agents=agents)
+    distances = compute_distances(agents=agents)
+    return compute_perception_strengths(azimuth_angles_positions=azimuth_angles_positions, distances=distances, bird_type=bird_type)
+
+def compute_perception_strengths_landmarks(agents, landmarks, bird_type):
+    azimuth_angles_positions = aconv.get_relative_positions_landmarks(agents=agents, landmarks=landmarks)
+    distances = compute_distances_landmarks(agents=agents, landmarks=landmarks)
+    return compute_perception_strengths(azimuth_angles_positions=azimuth_angles_positions, distances=distances, bird_type=bird_type, is_conspecifics=False)
 
 def wrap_to_pi(arr):
     """

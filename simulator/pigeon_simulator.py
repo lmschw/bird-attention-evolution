@@ -75,17 +75,27 @@ class PigeonSimulator:
         return np.sum(perception_strengths*in_comfortable_distance)
 
     def get_conspecific_alignment_cohesion(self, agents):
-        perception_strengths, min_distance = env_vision.compute_perception_strengths_conspecifics(agents=agents, bird_type=self.bird_type)
+        perception_strengths, min_conspecific = env_vision.compute_perception_strengths_conspecifics(agents=agents, bird_type=self.bird_type)
         local_orders = []
         comfortable_distance_matches = []
         for p_strength in perception_strengths:
             local_orders.append(self.compute_local_orders(agents[:,2], perception_strengths=p_strength))
             comfortable_distance_matches.append(self.compute_comfortable_distance_matches(agents=agents, perception_strengths=perception_strengths))
-        return perception_strengths, np.average(local_orders), np.average(comfortable_distance_matches), min_distance
+        return perception_strengths, np.average(local_orders), np.average(comfortable_distance_matches), min_conspecific
 
     def get_landmark_alignment(self, agents):
-        # TODO: landmark alignment
-        return 1
+        perception_strengths, min_landmark = env_vision.compute_perception_strengths_landmarks(agents=agents, landmarks=self.area.landmarks, bird_type=self.bird_type)
+        min_dists_final, min_angles_final, min_dist_idx = min_landmark
+        alignment_angles = []
+        for i in range(len(agents)):
+            if min_dist_idx[i] in self.paths[i].keys():
+                if min_angles_final[i] == 0 or (min_angles_final[i] < 0 and self.paths[i][min_dist_idx[i]] == 'l') or (min_angles_final[i] > 0 and self.paths[i][min_dist_idx[i]] == 'r'):
+                    alignment_angles.append(0)
+                else:
+                    alignment_angles.append(min_angles_final[i] * perception_strengths[i][min_dist_idx[i]])
+            else:
+                alignment_angles.append(0)
+        return alignment_angles
 
     def determine_visual_feedback(self, agents):
         """
@@ -97,23 +107,28 @@ class PigeonSimulator:
 
         perception_strengths, conspec_alignment, conspec_cohesion, min_neighbour = self.get_conspecific_alignment_cohesion(agents=agents)
         landmark_alignment = self.get_landmark_alignment(agents=agents)
-        return perception_strengths, min_neighbour, np.array([conspec_alignment, conspec_cohesion, landmark_alignment])
+        return perception_strengths, min_neighbour, [conspec_alignment, conspec_cohesion, landmark_alignment]
 
     def get_new_head_angles(self, agents, visual_feedback):
         # TODO: implement NN to get new angle for head incl. head turn limits
         return agents[:, 5]
 
-    def get_new_orientations(self, agents, perception_strengths):
+    def get_new_orientations(self, agents, perception_strengths_conspecifics, visual_feeback):
         """
         TODO: implement the new orientation for the pigeon based on the distance to its conspecifics that it can see
         here we can either outright use AE or at least take inspiration from it
         """
         orientations = []
-        for p_strength in perception_strengths:
+        for p_strength in perception_strengths_conspecifics:
             orient = np.sum(agents[:,np.newaxis, 2] * p_strength, axis=1)
-            orientations.append(orient)
+            if np.count_nonzero(orient) != 0:
+                orientations.append(orient)
+        if len(orientations) == 0:
+            return agents[:,2] + visual_feeback[2]
         orientations = np.array(orientations)
-        return np.average(orientations.T, axis=1)
+        orientation_conspecifics = np.average(orientations.T, axis=1)
+        orientation_conspecifics += visual_feeback[2]
+        return orientation_conspecifics + np.random.random(orientation_conspecifics.shape)
 
     def compute_u_v_coordinates_for_angles(self, angles):
         """
@@ -153,7 +168,7 @@ class PigeonSimulator:
     def update_agents(self, agents):
         perception_strengths, min_neighbour, visual_feedback = self.determine_visual_feedback(agents)
         agents = self.update_positions(agents=agents)
-        new_headings = self.get_new_orientations(agents=agents, perception_strengths=perception_strengths)
+        new_headings = self.get_new_orientations(agents=agents, perception_strengths_conspecifics=perception_strengths, visual_feeback=visual_feedback)
         new_head_headings = self.get_new_head_angles(agents=agents, visual_feedback=visual_feedback)
         agents[:, 2] = new_headings
         agents[:, 5] = new_head_headings

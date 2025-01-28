@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+from area_models.landmark import Landmark
 from bird_models.pigeon import Pigeon
 import vision.environment_vision as env_vision
 import geometry.normalisation as gnormal
@@ -13,6 +14,8 @@ If I recognize a landmark, i.e. it is in my path, I will use this information to
 If I can see a conspecific, I will try to get closer to it unless I am too close, in which case I will turn away.
 I will then move my head if necessary.
 """
+
+TARGET_RADIUS = 10
 
 class PigeonSimulator:
     def __init__(self, n, area, start_position, target_position, neural_network):
@@ -123,11 +126,12 @@ class PigeonSimulator:
             orient = np.sum(agents[:,np.newaxis, 2] * p_strength, axis=1)
             if np.count_nonzero(orient) != 0:
                 orientations.append(orient)
+        print(visual_feeback[2])
         if len(orientations) == 0:
             return agents[:,2] + visual_feeback[2]
         orientations = np.array(orientations)
         orientation_conspecifics = np.average(orientations.T, axis=1)
-        orientation_conspecifics += visual_feeback[2]
+        orientation_conspecifics += np.array(visual_feeback[2])
         return orientation_conspecifics + np.random.random(orientation_conspecifics.shape)
 
     def compute_u_v_coordinates_for_angles(self, angles):
@@ -164,14 +168,21 @@ class PigeonSimulator:
         agents[:, 0] = positions[:, 0]
         agents[:, 1] = positions[:, 1]
         return agents
+    
+    def evaluate_target(self, agents):
+        target = Landmark('target', self.target_position)
+        distances = env_vision.compute_distances_landmarks(agents=agents, landmarks=[target])
+        return np.where(distances[0] < TARGET_RADIUS, 0, agents[:,6])
 
     def update_agents(self, agents):
         perception_strengths, min_neighbour, visual_feedback = self.determine_visual_feedback(agents)
         agents = self.update_positions(agents=agents)
         new_headings = self.get_new_orientations(agents=agents, perception_strengths_conspecifics=perception_strengths, visual_feeback=visual_feedback)
         new_head_headings = self.get_new_head_angles(agents=agents, visual_feedback=visual_feedback)
+        speeds = self.evaluate_target(agents=agents)
         agents[:, 2] = new_headings
         agents[:, 5] = new_head_headings
+        agents[:, 6] = speeds
         return agents
 
     def simulate(self, tmax):
@@ -230,5 +241,4 @@ class PigeonSimulator:
                 
                 # Show the plot
                 plt.pause(0.000001)
-
 

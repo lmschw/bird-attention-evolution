@@ -7,14 +7,19 @@ def get_landmarks(self, bird, current_landmarks):
     pass
 
 def compute_distances(agents):
-    relative_positions = aconv.get_relative_positions(agents=agents)
-    rij = relative_positions[:,np.newaxis,:]-relative_positions   
+    positions = np.column_stack((agents[:,0], agents[:,1]))
+    rij = positions[:,np.newaxis,:]-positions   
     return np.sum(rij**2,axis=2)
 
 def compute_distances_landmarks(agents, landmarks):
-    relative_positions = aconv.get_relative_positions_landmarks(agents=agents, landmarks=landmarks)
-    rij = relative_positions[:,np.newaxis,:]-relative_positions   
-    return np.sum(rij**2,axis=1)
+    positions = np.column_stack((agents[:,0], agents[:,1]))
+    distances = []
+    for agent_idx in range(len(agents)):
+        landmark_distances = []
+        for landmark in landmarks:
+            landmark_distances.append(np.linalg.norm(positions[agent_idx] - landmark.position))   
+        distances.append(landmark_distances)   
+    return np.array(distances).T
 
 def compute_perception_strengths(azimuth_angles_positions, distances, bird_type, is_conspecifics=True):
     azimuth_angles_positions_pi = wrap_to_pi(azimuth_angles_positions)

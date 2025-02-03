@@ -83,11 +83,11 @@ class DifferentialEvolution:
         for t in range(self.tmax):
             match self.metric:
                 case Metrics.ORDER:
-                    timestep_results.append(metfunc.compute_global_order(result[t]))
+                    timestep_results.append(1-metfunc.compute_global_order(result[t])) # for minimisation
                 case Metrics.COHESION:
                     timestep_results.append(metfunc.compute_cohesion(result[t]))
                 case Metrics.COHESION_AND_ORDER:
-                    order = metfunc.compute_global_order(result[t])
+                    order = 1-metfunc.compute_global_order(result[t]) # for minimisation
                     cohesion = metfunc.compute_cohesion(result[t])
                     timestep_results.append(order*cohesion)
         return np.average(timestep_results)

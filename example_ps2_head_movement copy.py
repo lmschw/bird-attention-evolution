@@ -4,7 +4,7 @@ from simulator.pigeon_simulator_2 import PigeonSimulator
 from bird_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 
-from genetic.genetic_algorithm import DifferentialEvolution
+from genetic.genetic_algorithm_ps2 import DifferentialEvolution
 from genetic.metrics import Metrics
 
 import loggers.logger as logger

@@ -163,7 +163,7 @@ class PigeonSimulator:
         
         new_head_angles = []
         for i in range(self.num_agents):
-            new_head_angles.append(self.model.predict([closest_distances[i], average_bearings[i], num_visible_agents[i], previous_head_angles[i]]))
+            new_head_angles.append(self.model.predict([[closest_distances[i], average_bearings[i], num_visible_agents[i], previous_head_angles[i]]])[0][0][0])
         return new_head_angles
 
     def compute_distances_and_angles(self, headings, xx1, xx2, yy1, yy2, transpose_for_angles=False):
@@ -275,7 +275,7 @@ class PigeonSimulator:
         match_factors = self.compute_conspecific_match_factors(distances=distances)
         side_factors = self.compute_side_factors(angles, shape=(self.num_agents, self.num_agents))
         vision_strengths = self.compute_vision_strengths(agents=agents, distances=distances, angles=angles, shape=(self.num_agents, self.num_agents))
-        return np.sum(match_factors * side_factors * vision_strengths, axis=1)
+        return np.sum(match_factors * side_factors * vision_strengths, axis=1), distances, angles, vision_strengths
     
     def compute_delta_orientations_landmarks(self, agents):
         distances, angles = self.compute_distances_and_angles_landmarks(agents=agents)
@@ -284,14 +284,19 @@ class PigeonSimulator:
         return np.sum(landmark_alignment * vision_strengths, axis=1)
     
     def compute_new_orientations(self, agents):
-        delta_orientations_conspecifics = self.compute_delta_orientations_conspecifics(agents=agents)
+        delta_orientations_conspecifics, distances, angles, vision_strengths = self.compute_delta_orientations_conspecifics(agents=agents)
         if len(self.landmarks) > 0:
             delta_orientations_landmarks = self.compute_delta_orientations_landmarks(agents=agents)
         else:
             delta_orientations_landmarks = 0
         #print(delta_orientations_landmarks)
-        return self.wrap_to_pi(agents[:,2] + self.social_weight * delta_orientations_conspecifics + self.path_weight * delta_orientations_landmarks)
-    
+        new_orientations = self.wrap_to_pi(agents[:,2] + self.social_weight * delta_orientations_conspecifics + self.path_weight * delta_orientations_landmarks)
+        if self.model:
+            new_head_orientations = self.move_heads(agents=agents, distances=distances, angles=angles, perception_strengths_conspecifics=vision_strengths)
+        else:
+            new_head_orientations = agents[:,4]
+        return new_orientations, new_head_orientations
+
     def compute_new_positions(self, agents):
         positions = np.column_stack((agents[:,0], agents[:,1]))
         orientations = self.compute_u_v_coordinates_for_angles(angles=agents[:,2])
@@ -323,7 +328,8 @@ class PigeonSimulator:
 
             agents[:,0], agents[:,1] = self.compute_new_positions(agents=agents)
             self.agents = agents
-            agents[:,2] = self.compute_new_orientations(agents=agents)
+            agents[:,2], agents[:,4] = self.compute_new_orientations(agents=agents)
+
             if self.target_position:
                 agents[:,2], agents[:,3] = self.compute_target_reached(agents=agents)
 

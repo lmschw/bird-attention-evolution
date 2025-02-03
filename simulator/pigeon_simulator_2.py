@@ -121,7 +121,7 @@ class PigeonSimulator:
 
         plt.pause(0.000001)
 
-    def compute_distances_and_angles(self, agents, xx1, xx2, yy1, yy2, transpose_for_angles=False):
+    def compute_distances_and_angles(self, headings, xx1, xx2, yy1, yy2, transpose_for_angles=False):
         # Calculate distances
         x_diffs = xx1 - xx2
         y_diffs = yy1 - yy2
@@ -132,7 +132,6 @@ class PigeonSimulator:
         
 
         # Calculate angles in the local frame of reference
-        headings = agents[:, 2]
         if transpose_for_angles:
             angles = self.wrap_to_pi(np.arctan2(y_diffs.T, x_diffs.T) - headings[:, np.newaxis])
         else:
@@ -152,7 +151,7 @@ class PigeonSimulator:
         xx1, xx2 = np.meshgrid(pos_xs, pos_xs)
         yy1, yy2 = np.meshgrid(pos_ys, pos_ys)
 
-        return self.compute_distances_and_angles(agents=agents, xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2)
+        return self.compute_distances_and_angles(headings=agents[:,2], xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2)
     
     def compute_distances_and_angles_landmarks(self, agents):
         """
@@ -165,7 +164,7 @@ class PigeonSimulator:
         xx1, xx2 = np.meshgrid(pos_xs, self.landmarks_positions[:, 0])
         yy1, yy2 = np.meshgrid(pos_ys, self.landmarks_positions[:, 1])
 
-        return self.compute_distances_and_angles(agents=agents, xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2, transpose_for_angles=True)
+        return self.compute_distances_and_angles(headings=agents[:,2], xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2, transpose_for_angles=True)
     
 
     def compute_conspecific_match_factors(self, distances):
@@ -235,7 +234,7 @@ class PigeonSimulator:
     def compute_new_orientations(self, agents):
         delta_orientations_conspecifics = self.compute_delta_orientations_conspecifics(agents=agents)
         delta_orientations_landmarks = self.compute_delta_orientations_landmarks(agents=agents)
-        print(delta_orientations_landmarks)
+        #print(delta_orientations_landmarks)
         return agents[:,2] + self.social_weight * delta_orientations_conspecifics + self.path_weight * delta_orientations_landmarks
     
     def compute_new_positions(self, agents):

@@ -9,9 +9,9 @@ import geometry.normalisation as normal
 DIST_MOD = 0.001
 
 class PigeonSimulator:
-    def __init__(self, num_agents, bird_type, domain_size, start_position, target_position, target_radius,
-                 target_attraction_range, landmarks, path_options, social_weight=1, path_weight=1, 
-                 allow_head_turning=True, single_speed=True, visualize=True, visualize_vision_fields=0, 
+    def __init__(self, num_agents, bird_type, domain_size, start_position, target_position=None, target_radius=None,
+                 target_attraction_range=None, landmarks=[], path_options=[], social_weight=1, path_weight=1, 
+                 model=None, single_speed=True, visualize=True, visualize_vision_fields=0, 
                  visualize_head_direction=True, follow=False, graph_freq=5):
         self.num_agents = num_agents
         self.bird_type = bird_type
@@ -24,7 +24,7 @@ class PigeonSimulator:
         self.path_options = np.array(path_options)
         self.social_weight = social_weight,
         self.path_weight = path_weight
-        self.allow_head_turning = allow_head_turning
+        self.model = model
         self.single_speed = single_speed
         self.visualize = visualize
         self.visualize_vision_fields = visualize_vision_fields
@@ -81,17 +81,15 @@ class PigeonSimulator:
         else:
             speeds = np.random.uniform(self.bird_type.speeds[0], self.bird_type.speeds[2], self.num_agents)
 
-        if self.allow_head_turning:
-            head_angles = np.random.uniform(-self.bird_type.head_range_half, self.bird_type.head_range_half, self.num_agents)
-        else:
-            head_angles = np.zeros(self.num_agents)
+        head_angles = np.zeros(self.num_agents)
 
-        print(f"Head angles: {head_angles}")
+        #print(f"Head angles: {head_angles}")
 
-        self.paths = self.path_options[np.random.randint(0, len(self.path_options), self.num_agents)]
+        if len(self.path_options) > 0:
+            self.paths = self.path_options[np.random.randint(0, len(self.path_options), self.num_agents)]
+            print(f"Paths: {self.paths}")
 
         self.colours = np.random.uniform(0, 1, (self.visualize_vision_fields, 3))
-        print(f"Paths: {self.paths}")
 
         return np.column_stack([pos_xs, pos_ys, pos_hs, speeds, head_angles])
 
@@ -115,15 +113,15 @@ class PigeonSimulator:
                 wedge = mpatches.Wedge((agents[i,0], agents[i,1]), distance, start_angle, end_angle, ec="none", color=self.colours[i])
                 self.ax.add_patch(wedge)
 
-        
-        target = plt.Circle(self.target_position, self.target_radius, color='green')
-        self.ax.add_patch(target)
+        if self.path_weight > 0:
+            target = plt.Circle(self.target_position, self.target_radius, color='green')
+            self.ax.add_patch(target)
 
-        # Draw landmarks
-        landmark_positions = np.array([landmark.position for landmark in self.landmarks])
-        self.ax.scatter(landmark_positions[:, 0], landmark_positions[:, 1], color="yellow", s=15)
-        for i in range(len(landmark_positions)):
-            self.ax.annotate(self.landmarks[i].name, (landmark_positions[i,0], landmark_positions[i,1]), color="white")
+            # Draw landmarks
+            landmark_positions = np.array([landmark.position for landmark in self.landmarks])
+            self.ax.scatter(landmark_positions[:, 0], landmark_positions[:, 1], color="yellow", s=15)
+            for i in range(len(landmark_positions)):
+                self.ax.annotate(self.landmarks[i].name, (landmark_positions[i,0], landmark_positions[i,1]), color="white")
 
         # Draw agents
         uv_coords = self.compute_u_v_coordinates_for_angles(agents[:,2])
@@ -156,6 +154,17 @@ class PigeonSimulator:
             self.ax.set_ylim(0, self.domain_size[1])
 
         plt.pause(0.000001)
+
+    def move_heads(self, agents, distances, angles, perception_strengths_conspecifics):
+        closest_distances = np.min(distances, axis=1)
+        average_bearings = np.average(angles, axis=1)
+        num_visible_agents = np.count_nonzero(perception_strengths_conspecifics, axis=1)
+        previous_head_angles = agents[:,4]
+        
+        new_head_angles = []
+        for i in range(self.num_agents):
+            new_head_angles.append(self.model.predict([closest_distances[i], average_bearings[i], num_visible_agents[i], previous_head_angles[i]]))
+        return new_head_angles
 
     def compute_distances_and_angles(self, headings, xx1, xx2, yy1, yy2, transpose_for_angles=False):
         # Calculate distances
@@ -276,7 +285,10 @@ class PigeonSimulator:
     
     def compute_new_orientations(self, agents):
         delta_orientations_conspecifics = self.compute_delta_orientations_conspecifics(agents=agents)
-        delta_orientations_landmarks = self.compute_delta_orientations_landmarks(agents=agents)
+        if len(self.landmarks) > 0:
+            delta_orientations_landmarks = self.compute_delta_orientations_landmarks(agents=agents)
+        else:
+            delta_orientations_landmarks = 0
         #print(delta_orientations_landmarks)
         return self.wrap_to_pi(agents[:,2] + self.social_weight * delta_orientations_conspecifics + self.path_weight * delta_orientations_landmarks)
     
@@ -300,9 +312,10 @@ class PigeonSimulator:
 
     def run(self, tmax):
 
+        agent_history = []
         agents = self.initialize()
         self.dt = 1
-        
+
         for t in range(tmax):
             self.current_step = t
 
@@ -311,13 +324,16 @@ class PigeonSimulator:
             agents[:,0], agents[:,1] = self.compute_new_positions(agents=agents)
             self.agents = agents
             agents[:,2] = self.compute_new_orientations(agents=agents)
-            agents[:,2], agents[:,3] = self.compute_target_reached(agents=agents)
+            if self.target_position:
+                agents[:,2], agents[:,3] = self.compute_target_reached(agents=agents)
 
             if not (self.current_step % self.graph_freq) and self.visualize and self.current_step > 0:
                 self.graph_agents(agents=agents)
-        perc = (self.num_agents - np.count_nonzero(agents[:,3])) / self.num_agents # percentage of agents that have reached the nest
-        print(perc)
-        return perc
+
+            agent_history.append(agents)
+            
+        plt.close()
+        return np.array(agent_history)
 
     def wrap_to_pi(self, x):
         """

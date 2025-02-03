@@ -12,7 +12,7 @@ class PigeonSimulator:
     def __init__(self, num_agents, bird_type, domain_size, start_position, target_position, target_radius,
                  target_attraction_range, landmarks, path_options, social_weight=1, path_weight=1, 
                  allow_head_turning=True, single_speed=True, visualize=True, visualize_vision_fields=0, 
-                 follow=False, graph_freq=5):
+                 visualize_head_direction=True, follow=False, graph_freq=5):
         self.num_agents = num_agents
         self.bird_type = bird_type
         self.domain_size = domain_size
@@ -28,6 +28,7 @@ class PigeonSimulator:
         self.single_speed = single_speed
         self.visualize = visualize
         self.visualize_vision_fields = visualize_vision_fields
+        self.visualize_head_direction = visualize_head_direction
         self.follow = follow
         self.graph_freq = graph_freq
         self.centroid_trajectory = []
@@ -103,7 +104,7 @@ class PigeonSimulator:
 
         for i in range(self.visualize_vision_fields):
             for focus_area in self.bird_type.focus_areas:
-                focus_angle = agents[i,2] + focus_area.azimuth_angle_position_horizontal + 2 * np.pi
+                focus_angle = agents[i,2] + agents[i,4] + focus_area.azimuth_angle_position_horizontal + 2 * np.pi
                 start_angle = np.rad2deg(focus_angle - focus_area.angle_field_horizontal) 
                 end_angle = np.rad2deg(focus_angle + focus_area.angle_field_horizontal) 
                 if focus_area.comfortable_distance[1] == np.inf:
@@ -126,11 +127,18 @@ class PigeonSimulator:
 
         # Draw agents
         uv_coords = self.compute_u_v_coordinates_for_angles(agents[:,2])
+        uv_coords_head = self.compute_u_v_coordinates_for_angles(agents[:,2] + agents[:,4])
+
         self.ax.scatter(agents[:, 0], agents[:, 1], color="white", s=15)
 
         self.ax.quiver(agents[:, 0], agents[:, 1],
                     uv_coords[:, 0], uv_coords[:, 1],
                     color="white", width=0.005, scale=40)
+        
+        if self.visualize_head_direction:
+            self.ax.quiver(agents[:, 0], agents[:, 1],
+                        uv_coords_head[:, 0], uv_coords_head[:, 1],
+                        color="yellow", width=0.005, scale=50)
 
         # Draw Trajectory
         if len(self.centroid_trajectory) > 1:

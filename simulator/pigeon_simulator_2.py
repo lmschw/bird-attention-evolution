@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from bird_models.pigeon import Pigeon
 import geometry.normalisation as normal
 
+DIST_MOD = 0.01
+
 class PigeonSimulator:
     def __init__(self, num_agents, bird_type, domain_size, start_position, target_position, target_radius,
                  target_attraction_range, landmarks, path_options, social_weight=1, path_weight=1, 
@@ -197,8 +199,8 @@ class PigeonSimulator:
             vision_strengths = np.where(np.absolute(angle_diffs_focus) <= focus_area.angle_field_horizontal, perception_strengths, vision_strengths)
             
             # if an agent is outside of the comfortable viewing distance, it is perceived but with a very low percentage
-            vision_strengths = np.where(np.absolute(distances) < dist_min, 0.1 * vision_strengths, vision_strengths)
-            vision_strengths = np.where(((np.absolute(distances) > dist_max)&(np.absolute(distances) <=dist_absmax)), 0.1 * vision_strengths, vision_strengths)
+            vision_strengths = np.where(np.absolute(distances) < dist_min, DIST_MOD * vision_strengths, vision_strengths)
+            vision_strengths = np.where(((np.absolute(distances) > dist_max)&(np.absolute(distances) <=dist_absmax)), DIST_MOD * vision_strengths, vision_strengths)
         
             vision_strengths_overall.append(vision_strengths)
         vision_strengths_overall = np.array(vision_strengths_overall)
@@ -228,6 +230,7 @@ class PigeonSimulator:
     def compute_new_orientations(self, agents):
         delta_orientations_conspecifics = self.compute_delta_orientations_conspecifics(agents=agents)
         delta_orientations_landmarks = self.compute_delta_orientations_landmarks(agents=agents)
+        print(delta_orientations_landmarks)
         return agents[:,2] + self.social_weight * delta_orientations_conspecifics + self.path_weight * delta_orientations_landmarks
     
     def compute_new_positions(self, agents):

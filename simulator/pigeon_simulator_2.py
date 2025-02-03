@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from bird_models.pigeon import Pigeon
 import geometry.normalisation as normal
 
-DIST_MOD = 0.01
+DIST_MOD = 0.001
 
 class PigeonSimulator:
     def __init__(self, num_agents, bird_type, domain_size, start_position, target_position, target_radius,
@@ -62,6 +62,11 @@ class PigeonSimulator:
         pos_ys = self.start_position[1] + yy.ravel() + (rng.random(n_points_x * n_points_y) * spacing * 0.5) - spacing * 0.25
         pos_hs = (rng.random(n_points_x * n_points_x) * 2 * np.pi) - np.pi
 
+        indices = np.random.choice(range(len(pos_xs)), self.num_agents, replace=False)
+        pos_xs = pos_xs[indices]
+        pos_ys = pos_ys[indices]
+        pos_hs = pos_hs[indices]
+        
         num_agents = len(pos_xs)
         self.num_agents = num_agents
 

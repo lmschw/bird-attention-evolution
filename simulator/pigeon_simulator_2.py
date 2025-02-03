@@ -2,15 +2,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from bird_models.pigeon import Pigeon
+import geometry.normalisation as normal
 
 class PigeonSimulator:
-    def __init__(self, num_agents, domain_size, start_position, bird_type, 
-                 single_speed=True,
-                 visualize=True, follow=False, graph_freq=5):
+    def __init__(self, num_agents, bird_type, domain_size, start_position, target_position, target_radius,
+                 target_attraction_range, landmarks, path_options, social_weight=1, path_weight=1, 
+                 single_speed=True, visualize=True, follow=False, graph_freq=5):
         self.num_agents = num_agents
+        self.bird_type = bird_type
         self.domain_size = domain_size
         self.start_position = start_position
-        self.bird_type = bird_type
+        self.target_position = target_position
+        self.target_radius = target_radius
+        self.target_attraction_range = target_attraction_range
+        self.landmarks = landmarks
+        self.path_options = np.array(path_options)
+        self.social_weight = social_weight,
+        self.path_weight = path_weight
         self.single_speed = single_speed
         self.visualize = visualize
         self.follow = follow
@@ -20,7 +28,7 @@ class PigeonSimulator:
     def initialize(self):
         agents = self.init_agents()
 
-        #self.landmarks_positions = np.array([l.position for l in self.landmarks])
+        self.landmarks_positions = np.array([l.position for l in self.landmarks])
 
         # Setup graph
         self.fig, self.ax = plt.subplots()
@@ -30,8 +38,8 @@ class PigeonSimulator:
             self.ax.set_xlim(centroid_x - 7.5, centroid_x + 7.5)
             self.ax.set_ylim(centroid_y - 7.5, centroid_y + 7.5)
         else:
-            self.ax.set_xlim(0, self.env_size[0])
-            self.ax.set_ylim(0, self.env_size[1])
+            self.ax.set_xlim(0, self.domain_size[0])
+            self.ax.set_ylim(0, self.domain_size[1])
 
         return agents
 
@@ -60,6 +68,9 @@ class PigeonSimulator:
         else:
             speeds = np.random.uniform(self.bird_type.speeds[0], self.bird_type.speeds[2], self.num_agents)
 
+        self.paths = self.path_options[np.random.randint(0, len(self.path_options), self.num_agents)]
+        print(f"Paths: {self.paths}")
+
         return np.column_stack([pos_xs, pos_ys, pos_hs, speeds])
 
     def graph_agents(self, agents):
@@ -69,7 +80,7 @@ class PigeonSimulator:
         """  
         self.ax.clear()
 
-        """
+        
         target = plt.Circle(self.target_position, self.target_radius, color='green')
         self.ax.add_patch(target)
 
@@ -79,7 +90,7 @@ class PigeonSimulator:
         for i in range(len(landmark_positions)):
             self.ax.annotate(self.landmarks[i].name, (landmark_positions[i,0], landmark_positions[i,1]), color="white")
 
-        """
+        
         # Draw followers
         self.ax.scatter(agents[:, 0], agents[:, 1], color="white", s=15)
         self.ax.quiver(agents[:, 0], agents[:, 1],
@@ -98,24 +109,12 @@ class PigeonSimulator:
             self.ax.set_xlim(centroid_x-10, centroid_x+10)
             self.ax.set_ylim(centroid_y-10, centroid_y+10)
         else:
-            self.ax.set_xlim(0, self.env_size[0])
-            self.ax.set_ylim(0, self.env_size[1])
+            self.ax.set_xlim(0, self.domain_size[0])
+            self.ax.set_ylim(0, self.domain_size[1])
 
         plt.pause(0.000001)
 
-    def compute_distances_and_angles(self, agents):
-        """
-        Computes and returns the distances and its x and y elements for all pairs of agents
-
-        """
-        headings = agents[:, 2]
-
-        # Build meshgrid 
-        pos_xs = agents[:, 0]
-        pos_ys = agents[:, 1]
-        xx1, xx2 = np.meshgrid(pos_xs, pos_xs)
-        yy1, yy2 = np.meshgrid(pos_ys, pos_ys)
-
+    def compute_distances_and_angles(self, agents, xx1, xx2, yy1, yy2, transpose_for_angles=False):
         # Calculate distances
         x_diffs = xx1 - xx2
         y_diffs = yy1 - yy2
@@ -127,10 +126,40 @@ class PigeonSimulator:
 
         # Calculate angles in the local frame of reference
         headings = agents[:, 2]
-        angles = self.wrap_to_pi(np.arctan2(y_diffs, x_diffs) - headings[:, np.newaxis])
-        # print(f"Angles: {angles}")
+        if transpose_for_angles:
+            angles = self.wrap_to_pi(np.arctan2(y_diffs.T, x_diffs.T) - headings[:, np.newaxis])
+        else:
+            angles = self.wrap_to_pi(np.arctan2(y_diffs, x_diffs) - headings[:, np.newaxis])
+        #print(f"Angles: {angles}")
 
         return distances, angles
+
+    def compute_distances_and_angles_conspecifics(self, agents):
+        """
+        Computes and returns the distances and its x and y elements for all pairs of agents
+
+        """
+        # Build meshgrid 
+        pos_xs = agents[:, 0]
+        pos_ys = agents[:, 1]
+        xx1, xx2 = np.meshgrid(pos_xs, pos_xs)
+        yy1, yy2 = np.meshgrid(pos_ys, pos_ys)
+
+        return self.compute_distances_and_angles(agents=agents, xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2)
+    
+    def compute_distances_and_angles_landmarks(self, agents):
+        """
+        Computes and returns the distances and its x and y elements for all pairs of agents
+
+        """
+        # Build meshgrid 
+        pos_xs = agents[:, 0]
+        pos_ys = agents[:, 1]
+        xx1, xx2 = np.meshgrid(pos_xs, self.landmarks_positions[:, 0])
+        yy1, yy2 = np.meshgrid(pos_ys, self.landmarks_positions[:, 1])
+
+        return self.compute_distances_and_angles(agents=agents, xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2, transpose_for_angles=True)
+    
 
     def compute_conspecific_match_factors(self, distances):
         repulsion_zone = distances < self.bird_type.preferred_distance_left_right[0]
@@ -140,16 +169,17 @@ class PigeonSimulator:
         match_factors = np.where(attraction_zone, 1, match_factors)
         return match_factors
     
-    def compute_side_factors(self, angles):
+    def compute_side_factors(self, angles, shape):
         lefts = angles < 0
         rights = angles > 0
-        side_factors = np.zeros((self.num_agents, self.num_agents))
+        side_factors = np.zeros(shape=shape)
         side_factors = np.where(lefts, -1, side_factors)
         side_factors = np.where(rights, 1, side_factors)   
         return side_factors
     
-    def compute_vision_strengths(self, distances, angles):
+    def compute_vision_strengths(self, distances, angles, shape):
         dist_absmax = self.bird_type.sensing_range
+        vision_strengths_overall = []
         for focus_area in self.bird_type.focus_areas:
             dist_min = focus_area.comfortable_distance[0]
             dist_max = focus_area.comfortable_distance[1]
@@ -162,26 +192,43 @@ class PigeonSimulator:
 
             perception_strengths = 1 - (np.absolute(angle_diffs_focus)/focus_area.angle_field_horizontal)
             
-            vision_strengths = np.zeros((self.num_agents, self.num_agents))
+            vision_strengths = np.zeros(shape)
             # if the agent is within the cone of the field of vision, it is perceived
             vision_strengths = np.where(np.absolute(angle_diffs_focus) <= focus_area.angle_field_horizontal, perception_strengths, vision_strengths)
             
             # if an agent is outside of the comfortable viewing distance, it is perceived but with a very low percentage
             vision_strengths = np.where(np.absolute(distances) < dist_min, 0.1 * vision_strengths, vision_strengths)
-            vision_strengths = np.where(((np.absolute(distances) > dist_min)&(np.absolute(distances) <=dist_absmax)), 0.1 * vision_strengths, vision_strengths)
-            
-            return vision_strengths
+            vision_strengths = np.where(((np.absolute(distances) > dist_max)&(np.absolute(distances) <=dist_absmax)), 0.1 * vision_strengths, vision_strengths)
+        
+            vision_strengths_overall.append(vision_strengths)
+        vision_strengths_overall = np.array(vision_strengths_overall)
+        vision_strengths_overall = np.sum(vision_strengths_overall.T, axis=2).T
+        vision_strengths_overall = normal.normalise(vision_strengths_overall)
+        return vision_strengths_overall
+        
+    def compute_landmark_alignment(self, angles):
+        side_factors = self.compute_side_factors(angles, shape=(self.num_agents, len(self.landmarks)))
+        alignments = np.zeros((self.num_agents, len(self.landmarks)))
+        alignments = np.where(((side_factors*self.paths != 1) & (np.absolute(side_factors)+np.absolute(self.paths) == 2)), self.paths, alignments)
+        return alignments
 
-    def compute_delta_orientations(self, agents):
-        distances, angles = self.compute_distances_and_angles(agents)
+    def compute_delta_orientations_conspecifics(self, agents):
+        distances, angles = self.compute_distances_and_angles_conspecifics(agents)
         match_factors = self.compute_conspecific_match_factors(distances=distances)
-        side_factors = self.compute_side_factors(angles)
-        vision_strengths = self.compute_vision_strengths(distances=distances, angles=angles)
+        side_factors = self.compute_side_factors(angles, shape=(self.num_agents, self.num_agents))
+        vision_strengths = self.compute_vision_strengths(distances=distances, angles=angles, shape=(self.num_agents, self.num_agents))
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
     
+    def compute_delta_orientations_landmarks(self, agents):
+        distances, angles = self.compute_distances_and_angles_landmarks(agents=agents)
+        landmark_alignment = self.compute_landmark_alignment(angles=angles)
+        vision_strengths = self.compute_vision_strengths(distances=distances.T, angles=angles, shape=(self.num_agents, len(self.landmarks)))
+        return np.sum(landmark_alignment * vision_strengths, axis=1)
+    
     def compute_new_orientations(self, agents):
-        delta_orientations = self.compute_delta_orientations(agents=agents)
-        return agents[:,2] + delta_orientations
+        delta_orientations_conspecifics = self.compute_delta_orientations_conspecifics(agents=agents)
+        delta_orientations_landmarks = self.compute_delta_orientations_landmarks(agents=agents)
+        return agents[:,2] + self.social_weight * delta_orientations_conspecifics + self.path_weight * delta_orientations_landmarks
     
     def compute_new_positions(self, agents):
         positions = np.column_stack((agents[:,0], agents[:,1]))

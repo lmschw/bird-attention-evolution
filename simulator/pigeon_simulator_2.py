@@ -127,21 +127,10 @@ class PigeonSimulator:
         # Draw agents
         uv_coords = self.compute_u_v_coordinates_for_angles(agents[:,2])
         self.ax.scatter(agents[:, 0], agents[:, 1], color="white", s=15)
-        """         
-        self.ax.quiver(agents[:, 0], agents[:, 1],
-                    np.cos(agents[:, 2]), np.sin(agents[:, 2]),
-                    color="white", width=0.005, scale=40) """
 
         self.ax.quiver(agents[:, 0], agents[:, 1],
                     uv_coords[:, 0], uv_coords[:, 1],
                     color="white", width=0.005, scale=40)
-        
-
-
-        """
-        
-        """
-
 
         # Draw Trajectory
         if len(self.centroid_trajectory) > 1:
@@ -205,6 +194,13 @@ class PigeonSimulator:
 
         return self.compute_distances_and_angles(headings=agents[:,2], xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2, transpose_for_angles=True)
     
+    def compute_distances_and_angles_to_target(self, agents):
+        pos_xs = agents[:, 0]
+        pos_ys = agents[:, 1]
+        xx1, xx2 = np.meshgrid(pos_xs, self.target_position[0])
+        yy1, yy2 = np.meshgrid(pos_ys, self.target_position[1])
+
+        return self.compute_distances_and_angles(headings=agents[:,2], xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2, transpose_for_angles=True)
 
     def compute_conspecific_match_factors(self, distances):
         repulsion_zone = distances < self.bird_type.preferred_distance_left_right[0]
@@ -231,7 +227,7 @@ class PigeonSimulator:
 
             angles_2_pi = self.wrap_to_2_pi(angles)
 
-            focus_angle = self.wrap_to_2_pi(focus_area.azimuth_angle_position_horizontal + agents[:, 3])
+            focus_angle = self.wrap_to_2_pi(focus_area.azimuth_angle_position_horizontal + agents[:, 4])
 
             angle_diffs_focus = angles_2_pi - focus_angle
 
@@ -281,6 +277,18 @@ class PigeonSimulator:
         orientations = self.compute_u_v_coordinates_for_angles(angles=agents[:,2])
         positions += self.dt*(orientations.T * agents[:,3]).T
         return positions[:,0], positions[:,1]
+    
+    def has_reached_the_target(self, agents):
+        distances, angles = self.compute_distances_and_angles_to_target(agents=agents)
+        return distances < self.target_radius
+
+    def compute_target_reached(self, agents):
+        distances, _ = self.compute_distances_and_angles_to_target(agents=agents)
+        angles = np.arctan2(self.target_position[1]-agents[:,1], self.target_position[0]-agents[:,0])
+        has_reached_target = distances < self.target_radius
+        orientations = np.where(has_reached_target, angles, agents[:,2])
+        speeds = np.where(has_reached_target, 0, agents[:,3])
+        return orientations, speeds
 
     def run(self, tmax):
 
@@ -295,7 +303,7 @@ class PigeonSimulator:
             agents[:,0], agents[:,1] = self.compute_new_positions(agents=agents)
             self.agents = agents
             agents[:,2] = self.compute_new_orientations(agents=agents)
-            
+            agents[:,2], agents[:,3] = self.compute_target_reached(agents=agents)
 
             if not (self.current_step % self.graph_freq) and self.visualize and self.current_step > 0:
                 self.graph_agents(agents=agents)

@@ -227,8 +227,8 @@ class PigeonSimulator:
 
             angles_2_pi = self.wrap_to_2_pi(angles)
 
-            focus_angle = self.wrap_to_2_pi(focus_area.azimuth_angle_position_horizontal + agents[:, 4])
-
+            f_angle = self.wrap_to_2_pi(focus_area.azimuth_angle_position_horizontal + agents[:, 4])
+            focus_angle = np.reshape(np.concatenate([f_angle for i in range(shape[1])]), shape)
             angle_diffs_focus = angles_2_pi - focus_angle
 
             perception_strengths = 1 - (np.absolute(angle_diffs_focus)/focus_area.angle_field_horizontal)
@@ -307,6 +307,9 @@ class PigeonSimulator:
 
             if not (self.current_step % self.graph_freq) and self.visualize and self.current_step > 0:
                 self.graph_agents(agents=agents)
+        perc = (self.num_agents - np.count_nonzero(agents[:,3])) / self.num_agents # percentage of agents that have reached the nest
+        print(perc)
+        return perc
 
     def wrap_to_pi(self, x):
         """

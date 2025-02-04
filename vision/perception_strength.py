@@ -1,25 +1,6 @@
 import numpy as np
-import geometry.angle_conversion as aconv
+
 import geometry.normalisation as normal
-
-def get_landmarks(self, bird, current_landmarks):
-    # TODO: determine the landmarks that are currently within the field of vision and recognised by the bird
-    pass
-
-def compute_distances(agents):
-    positions = np.column_stack((agents[:,0], agents[:,1]))
-    rij = positions[:,np.newaxis,:]-positions   
-    return np.sum(rij**2,axis=2)
-
-def compute_distances_landmarks(agents, landmarks):
-    positions = np.column_stack((agents[:,0], agents[:,1]))
-    distances = []
-    for agent_idx in range(len(agents)):
-        landmark_distances = []
-        for landmark in landmarks:
-            landmark_distances.append(np.linalg.norm(positions[agent_idx] - landmark.position))   
-        distances.append(landmark_distances)   
-    return np.array(distances).T
 
 def compute_perception_strengths(azimuth_angles_positions, distances, bird_type, is_conspecifics=True):
     azimuth_angles_positions_pi = wrap_to_pi(azimuth_angles_positions)
@@ -33,7 +14,7 @@ def compute_perception_strengths(azimuth_angles_positions, distances, bird_type,
         max_angle = wrap_angle_to_pi(focus + focus_area.angle_field_horizontal)
 
         # the base perception strength is equal to the percentage of the visual field based around the focus
-        strengths = np.absolute(focus - azimuth_angles_positions_pi) / focus_area.angle_field_horizontal
+        strengths = 1-(np.absolute(focus - azimuth_angles_positions_pi) / focus_area.angle_field_horizontal)
 
         # print("initial strengths")
         # print(strengths)
@@ -72,36 +53,21 @@ def compute_perception_strengths(azimuth_angles_positions, distances, bird_type,
     min_dists_final = [min_distances[idx[0], idx[1]] for idx in min_dist_idx]
     min_angles_final = [min_angles[idx[0], idx[1]] for idx in min_dist_idx]
 
-    if is_conspecifics:
-        normalised_perception_strengths = normal.normalise(np.concatenate(overall_perception_strengths, axis=1))
-    else:
-        normalised_perception_strengths = normal.normalise(np.concatenate(overall_perception_strengths, axis=0))
-
-    num_agents = int(len(normalised_perception_strengths)/len(bird_type.focus_areas))
-    normalised_reshaped_perception_strengths = [normalised_perception_strengths[:, i * num_agents: (i+1) * num_agents] for i in range(len(bird_type.focus_areas))]
+    normalised_perception_strengths = normal.normalise(np.concatenate(overall_perception_strengths, axis=1))
 
     normalised_reshaped_perception_strengths = np.sum(normalised_perception_strengths.reshape((1, len(azimuth_angles_positions),len(azimuth_angles_positions[0]),len(bird_type.focus_areas))), axis=3)
+    normalised_reshaped_perception_strengths = normalised_reshaped_perception_strengths.reshape(distances.shape)
     return normalised_reshaped_perception_strengths, (min_dists_final, min_angles_final, min_dist_idx_basic)
-
-def compute_perception_strengths_conspecifics(agents, bird_type):
-    azimuth_angles_positions = aconv.get_relative_positions(agents=agents)
-    distances = compute_distances(agents=agents)
-    return compute_perception_strengths(azimuth_angles_positions=azimuth_angles_positions, distances=distances, bird_type=bird_type)
-
-def compute_perception_strengths_landmarks(agents, landmarks, bird_type):
-    azimuth_angles_positions = aconv.get_relative_positions_landmarks(agents=agents, landmarks=landmarks)
-    distances = compute_distances_landmarks(agents=agents, landmarks=landmarks)
-    return compute_perception_strengths(azimuth_angles_positions=azimuth_angles_positions, distances=distances, bird_type=bird_type, is_conspecifics=False)
 
 def wrap_to_pi(arr):
     """
     Wrapes the angles to [-pi, pi]
 
     """
-    arr = arr % (3.1415926 * 2)
-    arr = (arr + (3.1415926 * 2)) % (3.1415926 * 2)
+    arr = arr % (np.pi * 2)
+    arr = (arr + (np.pi * 2)) % (np.pi * 2)
 
-    arr[arr > 3.1415926] = arr[arr > 3.1415926] - (3.1415926 * 2)
+    arr[arr > np.pi] = arr[arr > np.pi] - (np.pi * 2)
 
     return arr
 

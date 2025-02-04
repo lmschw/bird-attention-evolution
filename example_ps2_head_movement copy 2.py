@@ -25,9 +25,9 @@ start_position = (0, 0)
 social_weight = 1
 path_weight = 0
 
-num_iters = 3
+num_iters = 25
 num_gens = 30
-num_ind = 1
+num_ind = 10
 use_norm = True
 pop_size = 30
 bounds = [0,1]

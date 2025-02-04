@@ -4,7 +4,7 @@ from simulator.pigeon_simulator_2 import PigeonSimulator
 from bird_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 
-from genetic.genetic_algorithm_ps2 import DifferentialEvolution
+from genetic.genetic_algorithm_ae import DifferentialEvolution
 from genetic.metrics import Metrics
 
 import loggers.logger as logger
@@ -35,7 +35,7 @@ metric = Metrics.COHESION
 
 len_weights = 4
 
-postfix = f"_test_tmax={n_steps}_n={n_agents}_bt={bird_type.name}_domain={env_size}_m={metric.value}"
+postfix = f"_test_ae_tmax={n_steps}_n={n_agents}_bt={bird_type.name}_domain={env_size}_m={metric.value}"
 save_path_best = f"best{postfix}.csv"
 save_path_best_normalised = f"best{postfix}_normalised.csv"
 save_path_general = f"all{postfix}"

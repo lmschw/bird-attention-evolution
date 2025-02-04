@@ -12,6 +12,7 @@ import neural_network.activation_functions as snn
 # closest distance, average bearings, num visible agents, previous head angle
 weights = [0.24373, 0.90672, 1.,      0.31082]
 weights = [0.52398, 0.70982, 0.98804, 0.50911]
+weights = [0,0,0,0]
 weight_size = 4
 output_size = 1
 

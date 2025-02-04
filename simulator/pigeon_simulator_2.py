@@ -11,7 +11,7 @@ DIST_MOD = 0.001
 class PigeonSimulator:
     def __init__(self, num_agents, bird_type, domain_size, start_position, target_position=None, target_radius=None,
                  target_attraction_range=None, landmarks=[], path_options=[], social_weight=1, path_weight=1, 
-                 limit_turns=True,
+                 limit_turns=True, use_distant_dependent_zone_factors=True,
                  model=None, single_speed=True, visualize=True, visualize_vision_fields=0, 
                  visualize_head_direction=True, follow=False, graph_freq=5):
         self.num_agents = num_agents
@@ -26,6 +26,7 @@ class PigeonSimulator:
         self.social_weight = social_weight,
         self.path_weight = path_weight
         self.limit_turns = limit_turns
+        self.use_distant_dependent_zone_factors = use_distant_dependent_zone_factors
         self.model = model
         self.single_speed = single_speed
         self.visualize = visualize
@@ -225,8 +226,15 @@ class PigeonSimulator:
         repulsion_zone = distances < self.bird_type.preferred_distance_left_right[0]
         attraction_zone = distances > self.bird_type.preferred_distance_left_right[1]
         match_factors = np.zeros((self.num_agents, self.num_agents))
-        match_factors = np.where(repulsion_zone, -1, match_factors)
-        match_factors = np.where(attraction_zone, 1, match_factors)
+        if self.use_distant_dependent_zone_factors:
+            rep_factors = -(1/distances) # stronger repulsion the closer the other is
+            att_factors = 1-(1/distances) # stronger attration the farther away the other is
+        else:
+            rep_factors = np.full(self.num_agents, -1)
+            att_factors = np.ones(self.num_agents)
+
+        match_factors = np.where(repulsion_zone, rep_factors, match_factors)
+        match_factors = np.where(attraction_zone, att_factors, match_factors)
         return match_factors
     
     def compute_side_factors(self, angles, shape):

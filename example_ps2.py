@@ -40,6 +40,8 @@ target_position = (40, 40)
 target_radius = 10
 target_attraction_range = 0 
 
+dist_based_zone_factors = True
+
 social_weight = 1
 path_weight = 0
 
@@ -84,6 +86,7 @@ sim = PigeonSimulator(num_agents=n_agents,
                       target_position=target_position,
                       target_radius=target_radius,
                       target_attraction_range=target_attraction_range,
+                      use_distant_dependent_zone_factors=dist_based_zone_factors,
                       model=nn,
                       landmarks=landmarks,
                       path_options=path_options,

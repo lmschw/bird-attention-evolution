@@ -57,8 +57,8 @@ class PigeonSimulator:
 
     def init_agents(self):
         rng = np.random
-        n_points_x = self.num_agents
-        n_points_y = self.num_agents
+        n_points_x = int(np.ceil(np.sqrt(self.num_agents)))
+        n_points_y = int(np.ceil(np.sqrt(self.num_agents)))
         spacing = np.average(self.bird_type.preferred_distance_left_right)
         init_x = 0
         init_y = 0

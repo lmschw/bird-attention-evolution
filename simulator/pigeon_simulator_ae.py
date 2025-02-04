@@ -77,8 +77,8 @@ class PigeonSimulatorAe:
 
     def init_agents(self, n_agents):
         rng = np.random
-        n_points_x = n_agents
-        n_points_y = n_agents
+        n_points_x = int(np.ceil(np.sqrt(self.num_agents)))
+        n_points_y = int(np.ceil(np.sqrt(self.num_agents)))
         spacing = 0.8
         init_x = 0
         init_y = 0
@@ -90,6 +90,11 @@ class PigeonSimulatorAe:
         pos_xs = self.start_position[0] + xx.ravel() + (rng.random(n_points_x * n_points_y) * spacing * 0.5) - spacing * 0.25
         pos_ys = self.start_position[1] + yy.ravel() + (rng.random(n_points_x * n_points_y) * spacing * 0.5) - spacing * 0.25
         pos_hs = (rng.random(n_points_x * n_points_x) * 2 * np.pi) - np.pi
+
+        indices = np.random.choice(range(len(pos_xs)), self.num_agents, replace=False)
+        pos_xs = pos_xs[indices]
+        pos_ys = pos_ys[indices]
+        pos_hs = pos_hs[indices]
 
         num_agents = len(pos_xs)
         self.num_agents = num_agents

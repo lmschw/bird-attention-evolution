@@ -3,7 +3,7 @@ from area_models.landmark import Landmark
 from simulator.pigeon_simulator_ae import PigeonSimulatorAe
 
 
-n_agents = 2
+n_agents = 10
 n_steps = 10000
 env_size = (50, 50)
 graph_freq = 10

@@ -25,7 +25,7 @@ nn.add(ActivationLayer(activation=snn.tanh, activation_prime=snn.tanh_prime))
 to_my_left = -1
 to_my_right = 1
 
-n_agents = 7
+n_agents = 10
 n_steps = 10000
 env_size = (50, 50)
 start_position = (25, 25)

@@ -11,6 +11,7 @@ DIST_MOD = 0.001
 class PigeonSimulator:
     def __init__(self, num_agents, bird_type, domain_size, start_position, target_position=None, target_radius=None,
                  target_attraction_range=None, landmarks=[], path_options=[], social_weight=1, path_weight=1, 
+                 limit_turns=True,
                  model=None, single_speed=True, visualize=True, visualize_vision_fields=0, 
                  visualize_head_direction=True, follow=False, graph_freq=5):
         self.num_agents = num_agents
@@ -24,6 +25,7 @@ class PigeonSimulator:
         self.path_options = np.array(path_options)
         self.social_weight = social_weight,
         self.path_weight = path_weight
+        self.limit_turns = limit_turns
         self.model = model
         self.single_speed = single_speed
         self.visualize = visualize
@@ -290,7 +292,11 @@ class PigeonSimulator:
         else:
             delta_orientations_landmarks = 0
         #print(delta_orientations_landmarks)
-        new_orientations = self.wrap_to_pi(agents[:,2] + self.social_weight * delta_orientations_conspecifics + self.path_weight * delta_orientations_landmarks)
+        delta_orientations = self.social_weight * delta_orientations_conspecifics + self.path_weight * delta_orientations_landmarks
+        delta_orientations = np.where((delta_orientations > self.bird_type.max_turn_angle), self.bird_type.max_turn_angle, delta_orientations)
+        delta_orientations = np.where((delta_orientations < -self.bird_type.max_turn_angle), -self.bird_type.max_turn_angle, delta_orientations)
+
+        new_orientations = self.wrap_to_pi(agents[:,2] + delta_orientations)
         if self.model:
             new_head_orientations = self.move_heads(agents=agents, distances=distances, angles=angles, perception_strengths_conspecifics=vision_strengths)
         else:

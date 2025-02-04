@@ -14,6 +14,7 @@ SPEEDS = (MIN_SPEED, AVERAGE_SPEED, MAX_SPEED)
 WINGSPAN = 0.67 # meters
 LENGTH = 0.26 # meters
 HEAD_RANGE_HALF = np.deg2rad(120)
+MAX_TURN_ANGLE = np.deg2rad(90)
 PREFERRED_DISTANCE_FRONT_BACK = [LENGTH + 0.1, 2 * LENGTH] # WARNING: THIS IS AN ASSUMPTION
 PREFERRED_DISTANCE_LEFT_RIGHT = [WINGSPAN + 2, 2 * WINGSPAN + 1]  # WARNING: THIS IS AN ASSUMPTION
 SENSING_RANGE = 1000
@@ -69,6 +70,7 @@ class Pigeon(Bird):
                          wingspan=WINGSPAN, 
                          length=LENGTH, 
                          head_range_half=HEAD_RANGE_HALF,
+                         max_turn_angle=MAX_TURN_ANGLE,
                          focus_areas=FOCUS_AREAS, 
                          preferred_distance_front_back=PREFERRED_DISTANCE_FRONT_BACK,
                          preferred_distance_left_right=PREFERRED_DISTANCE_LEFT_RIGHT,

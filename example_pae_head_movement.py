@@ -9,6 +9,7 @@ from genetic.genetic_algorithm_ae import DifferentialEvolution
 from genetic.metrics import Metrics
 
 import loggers.logger as logger
+import loggers.logger_model_params as logger_params
 import geometry.normalisation as normal
 
 weight_options = [WeightOptions.CLOSEST_DISTANCES,
@@ -43,12 +44,22 @@ pop_size = 30
 bounds = [0,1]
 metric = Metrics.COHESION
 
+model_params = {'num_agents': n_agents,
+                'tmax': n_steps,
+                'domain_size': env_size,
+                'start_position': start_position,
+                'social_weight': social_weight,
+                'weight_options': [option.value for option in weight_options],
+                'metric': metric.value}
 
 postfix = f"_test_ae_tmax={n_steps}_n={n_agents}_bt={bird_type.name}_domain={env_size}_m={metric.value}"
 save_path_best = f"best{postfix}.csv"
 save_path_best_normalised = f"best{postfix}_normalised.csv"
 save_path_general = f"all{postfix}"
 save_path_plot = f"plot{postfix}"
+save_path_model_params = f"model_params{postfix}"
+
+logger_params.log_model_params(model_params_dict=model_params, save_path=save_path_model_params)
 
 logger.initialise_log_file_with_headers(logger.create_headers(weight_options=weight_options, is_best=True), save_path=save_path_best)
 logger.initialise_log_file_with_headers(logger.create_headers(weight_options=weight_options, is_best=True), save_path=save_path_best_normalised)
@@ -59,6 +70,7 @@ for i in range(num_iters):
                             num_agents=n_agents,
                             bird_type=bird_type,
                             domain_size=env_size,
+                            weight_options=weight_options,
                             num_generations=num_gens,
                             num_iterations_per_individual=num_ind,
                             use_norm=use_norm,

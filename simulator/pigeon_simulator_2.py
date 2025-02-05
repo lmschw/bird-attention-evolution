@@ -161,7 +161,7 @@ class PigeonSimulator:
         plt.pause(0.000001)
 
     def move_heads(self, agents, distances, angles, perception_strengths_conspecifics):
-        inputs = np.array([wo.get_input_value_for_weight_option(weight_option=option, agents=agents, distances=distances, angles=angles, perception_strengths=perception_strengths_conspecifics) for option in self.weight_options])
+        inputs = np.array([wo.get_input_value_for_weight_option(weight_option=option, bearings=agents[:,4], distances=distances, angles=angles, perception_strengths=perception_strengths_conspecifics) for option in self.weight_options])
         inputs = np.where(inputs == np.inf, wo.MAX_INPUT, inputs)
         new_head_angles = []
         for i in range(self.num_agents):

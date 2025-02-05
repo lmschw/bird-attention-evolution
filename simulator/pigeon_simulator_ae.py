@@ -257,7 +257,7 @@ class PigeonSimulatorAe:
             distances, angles = self.compute_distances_and_angles()
             perception_strengths_conspecifics, min_agent = pstrength.compute_perception_strengths(angles, distances, self.bird_type)
 
-            inputs = np.array([wo.get_input_value_for_weight_option(weight_option=option, agents=agents, distances=distances, angles=angles, perception_strengths=perception_strengths_conspecifics) for option in self.weight_options])
+            inputs = np.array([wo.get_input_value_for_weight_option(weight_option=option, bearings=agents[:,3], distances=distances, angles=angles, perception_strengths=perception_strengths_conspecifics) for option in self.weight_options])
             inputs = np.where(inputs == np.inf, wo.MAX_INPUT, inputs)
             new_head_angles = []
             for i in range(self.num_agents):

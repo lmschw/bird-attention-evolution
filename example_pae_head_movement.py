@@ -1,6 +1,7 @@
 import numpy as np
 
 from simulator.pigeon_simulator_2 import PigeonSimulator
+from simulator.enum_weight_options import WeightOptions
 from bird_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 
@@ -9,6 +10,15 @@ from genetic.metrics import Metrics
 
 import loggers.logger as logger
 import geometry.normalisation as normal
+
+weight_options = [WeightOptions.CLOSEST_DISTANCES,
+                  WeightOptions.CLOSEST_BEARINGS,
+                  WeightOptions.AVG_DISTANCES,
+                  WeightOptions.AVG_BEARINGS,
+                  WeightOptions.NUM_VISIBLE_AGENTS,
+                  WeightOptions.PREVIOUS_HEAD_ANGLES,
+                  WeightOptions.AVG_PERCEPTION_STRENGTHS]
+weight_size = len(weight_options)
 
 n_agents = 7
 n_steps = 10000
@@ -33,7 +43,6 @@ pop_size = 30
 bounds = [0,1]
 metric = Metrics.COHESION
 
-len_weights = 4
 
 postfix = f"_test_ae_tmax={n_steps}_n={n_agents}_bt={bird_type.name}_domain={env_size}_m={metric.value}"
 save_path_best = f"best{postfix}.csv"
@@ -41,8 +50,8 @@ save_path_best_normalised = f"best{postfix}_normalised.csv"
 save_path_general = f"all{postfix}"
 save_path_plot = f"plot{postfix}"
 
-logger.initialise_log_file_with_headers(logger.create_headers(len_weights=len_weights, is_best=True), save_path=save_path_best)
-logger.initialise_log_file_with_headers(logger.create_headers(len_weights=len_weights, is_best=True), save_path=save_path_best_normalised)
+logger.initialise_log_file_with_headers(logger.create_headers(weight_options=weight_options, is_best=True), save_path=save_path_best)
+logger.initialise_log_file_with_headers(logger.create_headers(weight_options=weight_options, is_best=True), save_path=save_path_best_normalised)
 
 for i in range(num_iters):
 

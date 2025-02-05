@@ -17,7 +17,7 @@ from simulator.pigeon_simulator_ae import PigeonSimulatorAe
 from bird_models.pigeon import Pigeon
 
 class DifferentialEvolution:
-    def __init__(self, tmax, num_agents=None, bird_type=Pigeon(), domain_size=(50,50), 
+    def __init__(self, tmax, num_agents=None, bird_type=Pigeon(), domain_size=(50,50), weight_options=[],
                  num_generations=1000, num_iterations_per_individual=1, 
                  use_norm=True, population_size=100, bounds=[0, 1], update_to_zero_bounds=[0,0], 
                  mutation_scale_factor=1, crossover_rate=0.5, early_stopping_after_gens=None, 
@@ -52,6 +52,7 @@ class DifferentialEvolution:
         self.num_agents = num_agents
         self.bird_type = bird_type
         self.domain_size = domain_size
+        self.weight_options = weight_options
 
         self.use_norm = use_norm
         self.population_size = population_size
@@ -63,8 +64,7 @@ class DifferentialEvolution:
 
         self.metric = metric
 
-        # TODO add enum to include other options
-        self.weight_size = 4
+        self.weight_size = len(self.weight_options)
         self.output_size = 1
 
     def create_initial_population(self):
@@ -101,6 +101,7 @@ class DifferentialEvolution:
                                           num_agents=self.num_agents,
                                           env_size=self.domain_size,
                                           start_position=(0,0),
+                                          weight_options=self.weight_options,
                                           model=model,
                                           visualize=False)
             result = simulator.run(tmax=self.tmax)
@@ -139,7 +140,7 @@ class DifferentialEvolution:
     def run(self, save_path_plots=None, save_path_log=None, log_depth='all'):
         with open(f"{save_path_log}.csv", 'a', newline='') as log:
             w = csv.writer(log)
-            headers = logger.create_headers(self.weight_size)
+            headers = logger.create_headers(self.weight_options)
             w.writerow(headers)
             log.flush()
             population  = self.create_initial_population()

@@ -9,6 +9,7 @@ from shapely.geometry import LineString, Point
 from shapely.ops import nearest_points
 
 import vision.perception_strength as pstrength
+import simulator.weight_options as wo
 
 # AE Constants
 EPSILON = 12
@@ -33,12 +34,13 @@ PERCEPTION_STRENGTH_MODIFIER = 5
 
 class PigeonSimulatorAe:
     def __init__(self, bird_type, num_agents, env_size, start_position,
-                 model=None,
+                 weight_options=[], model=None,
                  visualize=True, visualize_head_direction=True, follow=True, graph_freq=5):
         self.bird_type = bird_type
         self.num_agents = num_agents
         self.env_size = env_size
         self.start_position = start_position
+        self.weight_options = weight_options
         self.model = model
         self.visualize = visualize
         self.visualize_head_direction = visualize_head_direction
@@ -255,14 +257,11 @@ class PigeonSimulatorAe:
             distances, angles = self.compute_distances_and_angles()
             perception_strengths_conspecifics, min_agent = pstrength.compute_perception_strengths(angles, distances, self.bird_type)
 
-            closest_distances = np.min(distances, axis=1)
-            average_bearings = np.average(angles, axis=1)
-            num_visible_agents = np.count_nonzero(perception_strengths_conspecifics, axis=1)
-            previous_head_angles = agents[:,3]
-            
+            inputs = np.array([wo.get_input_value_for_weight_option(weight_option=option, agents=agents, distances=distances, angles=angles, perception_strengths=perception_strengths_conspecifics) for option in self.weight_options])
+            inputs = np.where(inputs == np.inf, wo.MAX_INPUT, inputs)
             new_head_angles = []
             for i in range(self.num_agents):
-                new_head_angles.append(self.model.predict([[closest_distances[i], average_bearings[i], num_visible_agents[i], previous_head_angles[i]]])[0][0][0])
+                new_head_angles.append(self.model.predict([inputs[:,i]])[0][0][0])
             new_head_orientations = new_head_angles
         else:
             new_head_orientations = agents[:,3]

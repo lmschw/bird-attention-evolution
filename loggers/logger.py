@@ -5,7 +5,7 @@ import numpy as np
 Service containing methods to do with logging.
 """
 
-def create_headers(len_weights, is_best=False):
+def create_headers(weight_options, is_best=False):
     """
     Creates the headers for the csv file.
 
@@ -21,7 +21,7 @@ def create_headers(len_weights, is_best=False):
     else:
         headers = ['iter', 'ind']
     
-    individual_headers = [f"individual_{i}" for i in range(len_weights)]
+    individual_headers = [option.value for option in weight_options]
     headers.extend(individual_headers)
     headers.append('fitness')
     return headers

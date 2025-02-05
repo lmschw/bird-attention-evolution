@@ -3,6 +3,7 @@ import numpy as np
 from simulator.pigeon_simulator_2 import PigeonSimulator
 from simulator.enum_weight_options import WeightOptions
 from bird_models.pigeon import Pigeon
+from bird_models.zebrafinch import Zebrafinch
 from area_models.landmark import Landmark
 
 from neural_network.activation_layer import ActivationLayer
@@ -48,7 +49,7 @@ visualize_vision_fields = 1
 visualize_head_directions = True
 follow = True
 single_speed = True
-bird_type = Pigeon()
+bird_type = Zebrafinch()
 start_position = (10, 10)
 target_position = (40, 40)
 target_radius = 10

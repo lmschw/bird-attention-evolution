@@ -38,9 +38,6 @@ fully_connected_layer.set_weights(weights=weights)
 nn.add(fully_connected_layer)
 nn.add(ActivationLayer(activation=snn.tanh, activation_prime=snn.tanh_prime))
 
-to_my_left = -1
-to_my_right = 1
-
 n_agents = 7
 n_steps = 10000
 env_size = (50, 50)
@@ -48,6 +45,7 @@ start_position = (25, 25)
 graph_freq = 10
 visualize = True
 visualize_vision_fields = 1
+visualize_head_directions = True
 follow = True
 single_speed = True
 bird_type = Pigeon()
@@ -59,7 +57,7 @@ target_attraction_range = 0
 dist_based_zone_factors = True
 
 social_weight = 1
-path_weight = 0
+environment_weight = 0
 
 landmark_1 = Landmark("1", [10, 15])
 landmark_2 = Landmark("2", [15, 40])
@@ -70,48 +68,20 @@ landmark_6 = Landmark("6", [30, 35])
 target = Landmark('target', target_position)
 landmarks = [landmark_1, landmark_2, landmark_3, landmark_4, landmark_5, landmark_6]
 
-landmark_7 = Landmark("7", [30, 35])
-
-#landmarks = [landmark_7]
-#landmarks = [landmark_1]
-
-path_options = [np.array([to_my_left, 0, to_my_right, 0, 0, to_my_left]),
-                np.array([to_my_left, to_my_left, 0, 0, 0, to_my_right]),
-                np.array([to_my_left, 0, to_my_left, 0, to_my_right, 0]),
-                np.array([0, 0, to_my_left, 0, to_my_right, 0]),
-                np.array([to_my_left, 0, 0, to_my_right, to_my_right, 0]),
-                np.array([to_my_left, 0, 0, to_my_right, 0, to_my_left]),
-                np.array([to_my_left, to_my_left, 0, to_my_right, 0, 0])]
-
-path_options = [path_options[0]]
-
-#path_options = [np.array([to_my_left, to_my_left, to_my_right, to_my_right, to_my_right, to_my_left])]
-
-""" path_options = [{landmark_1: 'r', landmark_3: 'l', landmark_6: 'r', target: 's'},
-         {landmark_1: 'r', landmark_3: 'l', target: 's'},
-         {landmark_1: 'l', landmark_2: 'r', landmark_6: 'l', target: 's'},
-         {landmark_1: 'l', landmark_3: 'l', landmark_5: 'l', target: 's'},
-         {landmark_3: 'l', landmark_6: 'r', target: 's'},
-         {landmark_3: 'r', landmark_4: 'l', landmark_5: 'l', target: 's'},
-         {landmark_3: 'r', landmark_4: 'l', target: 's'}
-         ] """
 sim = PigeonSimulator(num_agents=n_agents,
                       bird_type=bird_type,
                       domain_size=env_size,
                       start_position=start_position,
-                      target_position=target_position,
-                      target_radius=target_radius,
-                      target_attraction_range=target_attraction_range,
                       use_distant_dependent_zone_factors=dist_based_zone_factors,
                       weight_options=weight_options,
                       model=nn,
                       landmarks=landmarks,
-                      path_options=path_options,
                       social_weight=social_weight,
-                      path_weight=path_weight,
+                      environment_weight=environment_weight,
                       single_speed=single_speed,
                       visualize=visualize,
                       visualize_vision_fields=visualize_vision_fields,
+                      visualize_head_direction=visualize_head_directions,
                       follow=follow,
                       graph_freq=graph_freq)
 sim.run(tmax=n_steps)

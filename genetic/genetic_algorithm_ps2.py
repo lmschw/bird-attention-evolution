@@ -102,7 +102,7 @@ class DifferentialEvolution:
                                         domain_size=self.domain_size,
                                         start_position=(0,0),
                                         social_weight=1,
-                                        path_weight=0,
+                                        environment_weight=0,
                                         weight_options=self.weight_options,
                                         model=model,
                                         visualize=False)

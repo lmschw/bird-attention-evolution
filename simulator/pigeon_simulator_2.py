@@ -5,13 +5,15 @@ import matplotlib.patches as mpatches
 from bird_models.pigeon import Pigeon
 from bird_models.focus_area import FocusArea
 import geometry.normalisation as normal
+from simulator.enum_weight_options import WeightOptions
 
 DIST_MOD = 0.001
+MAX_INPUT = 1_000_000
 
 class PigeonSimulator:
     def __init__(self, num_agents, bird_type, domain_size, start_position, target_position=None, target_radius=None,
                  target_attraction_range=None, landmarks=[], path_options=[], social_weight=1, path_weight=1, 
-                 limit_turns=True, use_distant_dependent_zone_factors=True,
+                 limit_turns=True, use_distant_dependent_zone_factors=True, weight_options=[],
                  model=None, single_speed=True, visualize=True, visualize_vision_fields=0, 
                  visualize_head_direction=True, follow=False, graph_freq=5):
         self.num_agents = num_agents
@@ -27,6 +29,7 @@ class PigeonSimulator:
         self.path_weight = path_weight
         self.limit_turns = limit_turns
         self.use_distant_dependent_zone_factors = use_distant_dependent_zone_factors
+        self.weight_options = weight_options
         self.model = model
         self.single_speed = single_speed
         self.visualize = visualize
@@ -158,15 +161,37 @@ class PigeonSimulator:
 
         plt.pause(0.000001)
 
+    def get_input_value_for_weight_option(self, weight_option, agents, distances, angles, perception_strengths):
+        closest_neighbour = np.argmin(distances, axis=1)
+        match weight_option:
+            case WeightOptions.CLOSEST_DISTANCES:
+                closest_distances = distances[closest_neighbour]
+                return closest_distances[0]
+            case WeightOptions.CLOSEST_BEARINGS:
+                closest_bearings = angles[closest_neighbour]
+                return closest_bearings[0]
+            case WeightOptions.AVG_DISTANCES:
+                average_distances = np.average(distances, axis=1)
+                return average_distances
+            case WeightOptions.AVG_BEARINGS:
+                average_bearings = np.average(angles, axis=1)
+                return average_bearings
+            case WeightOptions.NUM_VISIBLE_AGENTS:
+                num_visible_agents = np.count_nonzero(perception_strengths, axis=1)
+                return num_visible_agents
+            case WeightOptions.PREVIOUS_HEAD_ANGLES:
+                previous_head_angles = agents[:,4]
+                return previous_head_angles
+            case WeightOptions.AVG_PERCEPTION_STRENGTHS:
+                average_perception_strengths = np.average(perception_strengths, axis=1)
+                return average_perception_strengths
+
     def move_heads(self, agents, distances, angles, perception_strengths_conspecifics):
-        closest_distances = np.min(distances, axis=1)
-        average_bearings = np.average(angles, axis=1)
-        num_visible_agents = np.count_nonzero(perception_strengths_conspecifics, axis=1)
-        previous_head_angles = agents[:,4]
-        
+        inputs = np.array([self.get_input_value_for_weight_option(weight_option=option, agents=agents, distances=distances, angles=angles, perception_strengths=perception_strengths_conspecifics) for option in self.weight_options])
+        inputs = np.where(inputs == np.inf, MAX_INPUT, inputs)
         new_head_angles = []
         for i in range(self.num_agents):
-            new_head_angles.append(self.model.predict([[closest_distances[i], average_bearings[i], num_visible_agents[i], previous_head_angles[i]]])[0][0][0])
+            new_head_angles.append(self.model.predict([inputs[:,i]])[0][0][0])
         return new_head_angles
 
     def compute_distances_and_angles(self, headings, xx1, xx2, yy1, yy2, transpose_for_angles=False):

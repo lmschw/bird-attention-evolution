@@ -1,6 +1,7 @@
 import numpy as np
 
 from simulator.pigeon_simulator_2 import PigeonSimulator
+from simulator.enum_weight_options import WeightOptions
 from bird_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 
@@ -9,12 +10,27 @@ from neural_network.fully_connected_layer import FullyConnectedLayer
 from neural_network.neural_network import NeuralNetwork
 import neural_network.activation_functions as snn
 
+"""
+weight_options = [WeightOptions.CLOSEST_DISTANCES, 
+                  WeightOptions.AVG_BEARINGS, 
+                  WeightOptions.NUM_VISIBLE_AGENTS,
+                  WeightOptions.PREVIOUS_HEAD_ANGLES]
 # closest distance, average bearings, num visible agents, previous head angle
 weights = [0.24373, 0.90672, 1.,      0.31082]
 weights = [0.52398, 0.70982, 0.98804, 0.50911]
 weights = [0,0,0,0]
-weight_size = 4
+"""
+weight_options = [WeightOptions.CLOSEST_DISTANCES,
+                  WeightOptions.CLOSEST_BEARINGS,
+                  WeightOptions.AVG_DISTANCES,
+                  WeightOptions.AVG_BEARINGS,
+                  WeightOptions.NUM_VISIBLE_AGENTS,
+                  WeightOptions.PREVIOUS_HEAD_ANGLES,
+                  WeightOptions.AVG_PERCEPTION_STRENGTHS]
+weight_size = len(weight_options)
 output_size = 1
+
+weights = [0, 0, 0, 0, 0, 0, 0]
 
 nn = NeuralNetwork()
 fully_connected_layer = FullyConnectedLayer(input_size=weight_size, output_size=output_size)
@@ -25,7 +41,7 @@ nn.add(ActivationLayer(activation=snn.tanh, activation_prime=snn.tanh_prime))
 to_my_left = -1
 to_my_right = 1
 
-n_agents = 10
+n_agents = 7
 n_steps = 10000
 env_size = (50, 50)
 start_position = (25, 25)
@@ -87,6 +103,7 @@ sim = PigeonSimulator(num_agents=n_agents,
                       target_radius=target_radius,
                       target_attraction_range=target_attraction_range,
                       use_distant_dependent_zone_factors=dist_based_zone_factors,
+                      weight_options=weight_options,
                       model=nn,
                       landmarks=landmarks,
                       path_options=path_options,

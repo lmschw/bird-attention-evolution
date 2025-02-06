@@ -13,7 +13,7 @@ DIST_MOD = 0.001
 
 class PigeonSimulator:
     def __init__(self, num_agents, bird_type, domain_size, start_position, landmarks=[],
-                 barriers=[], social_weight=1, environment_weight=1, limit_turns=True, 
+                 noise_amplitude=0, social_weight=1, environment_weight=1, limit_turns=True, 
                  use_distant_dependent_zone_factors=True, weight_options=[], model=None, 
                  single_speed=True, visualize=True, visualize_vision_fields=0, 
                  visualize_head_direction=True, follow=False, graph_freq=5):
@@ -21,6 +21,7 @@ class PigeonSimulator:
         self.bird_type = bird_type
         self.domain_size = domain_size
         self.start_position = start_position
+        self.noise_amplitude = noise_amplitude
         self.landmarks = landmarks
         self.social_weight = social_weight,
         self.environment_weight = environment_weight
@@ -316,6 +317,9 @@ class PigeonSimulator:
         vision_strengths = self.compute_vision_strengths(agents=agents, distances=distances, angles=angles, shape=(self.num_agents, len(self.landmarks)))
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
     
+    def generate_noise(self):
+        return np.random.normal(scale=self.noise_amplitude, size=self.num_agents)
+
     def compute_new_orientations(self, agents):
         delta_orientations_conspecifics, distances, angles, vision_strengths = self.compute_delta_orientations_conspecifics(agents=agents)
         if len(self.landmarks) > 0:
@@ -326,6 +330,9 @@ class PigeonSimulator:
         delta_orientations = self.social_weight * delta_orientations_conspecifics + self.environment_weight * delta_orientations_landmarks
         delta_orientations = np.where((delta_orientations > self.bird_type.max_turn_angle), self.bird_type.max_turn_angle, delta_orientations)
         delta_orientations = np.where((delta_orientations < -self.bird_type.max_turn_angle), -self.bird_type.max_turn_angle, delta_orientations)
+
+        # add noise
+        delta_orientations = delta_orientations + self.generate_noise()
 
         new_orientations = self.wrap_to_pi(agents[:,2] + delta_orientations)
         if self.model:

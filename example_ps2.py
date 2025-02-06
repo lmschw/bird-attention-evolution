@@ -42,6 +42,7 @@ nn.add(ActivationLayer(activation=snn.tanh, activation_prime=snn.tanh_prime))
 n_agents = 7
 n_steps = 10000
 env_size = (50, 50)
+noise_amplitude = 0
 start_position = (25, 25)
 graph_freq = 10
 visualize = True
@@ -51,9 +52,6 @@ follow = False
 single_speed = True
 bird_type = Pigeon()
 start_position = (10, 10)
-target_position = (40, 40)
-target_radius = 10
-target_attraction_range = 0 
 
 dist_based_zone_factors = True
 
@@ -61,7 +59,11 @@ social_weight = 0.5
 environment_weight = 1
 
 landmark_1 = Landmark('1', corners=[[20, 10], [20, 15], [25, 15], [25, 10]])
-landmarks = [landmark_1]
+landmark_2 = Landmark('2', corners=[[20, 0], [20, 5], [25, 5], [25, 0]])
+landmark_3 = Landmark('3', corners=[[20, 20], [20, 25], [25, 25], [25, 20]])
+
+
+landmarks = [landmark_1, landmark_2, landmark_3]
 
 sim = PigeonSimulator(num_agents=n_agents,
                       bird_type=bird_type,

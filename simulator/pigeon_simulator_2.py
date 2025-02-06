@@ -296,13 +296,6 @@ class PigeonSimulator:
         alignments = np.where(((side_factors*self.paths != 1) & (np.absolute(side_factors)+np.absolute(self.paths) == 2)), self.paths, alignments)
         return alignments
 
-
-    def compute_landmark_alignment(self, angles):
-        side_factors = self.compute_side_factors(angles, shape=(self.num_agents, len(self.landmarks)))
-        alignments = np.zeros((self.num_agents, len(self.landmarks)))
-        alignments = np.where(((side_factors*self.paths != 1) & (np.absolute(side_factors)+np.absolute(self.paths) == 2)), self.paths, alignments)
-        return alignments
-
     def compute_delta_orientations_conspecifics(self, agents):
         distances, angles = self.compute_distances_and_angles_conspecifics(agents)
         match_factors = self.compute_conspecific_match_factors(distances=distances)

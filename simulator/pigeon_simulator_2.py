@@ -225,7 +225,6 @@ class PigeonSimulator:
         #print(f"Angles: {angles}")
 
         return distances, angles
-        #return self.compute_distances_and_angles(headings=agents[:,2], xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2, transpose_for_angles=False)
     
     def compute_conspecific_match_factors(self, distances):
         repulsion_zone = distances < self.bird_type.preferred_distance_left_right[0]
@@ -260,8 +259,10 @@ class PigeonSimulator:
         side_factors = np.where(rights, 1, side_factors)   
         return side_factors
     
-    def compute_vision_strengths(self, agents, distances, angles, shape):
-        dist_absmax = self.bird_type.sensing_range
+    def compute_vision_strengths(self, head_orientations, distances, angles, shape, bird_type=None):
+        if bird_type == None:
+            bird_type = self.bird_type
+        dist_absmax = bird_type.sensing_range
         vision_strengths_overall = []
         for focus_area in self.bird_type.focus_areas:
             dist_min = focus_area.comfortable_distance[0]
@@ -269,7 +270,7 @@ class PigeonSimulator:
 
             angles_2_pi = self.wrap_to_2_pi(angles)
 
-            f_angle = self.wrap_to_2_pi(focus_area.azimuth_angle_position_horizontal + agents[:, 4])
+            f_angle = self.wrap_to_2_pi(focus_area.azimuth_angle_position_horizontal + head_orientations)
             focus_angle = np.reshape(np.concatenate([f_angle for i in range(shape[1])]), shape)
             angle_diffs_focus = angles_2_pi - focus_angle
 
@@ -300,20 +301,20 @@ class PigeonSimulator:
         distances, angles = self.compute_distances_and_angles_conspecifics(agents)
         match_factors = self.compute_conspecific_match_factors(distances=distances)
         side_factors = self.compute_side_factors(angles, shape=(self.num_agents, self.num_agents))
-        vision_strengths = self.compute_vision_strengths(agents=agents, distances=distances, angles=angles, shape=(self.num_agents, self.num_agents))
+        vision_strengths = self.compute_vision_strengths(head_orientations=agents[:,4], distances=distances, angles=angles, shape=(self.num_agents, self.num_agents))
         return np.sum(match_factors * side_factors * vision_strengths, axis=1), distances, angles, vision_strengths
     
     def compute_delta_orientations_landmarks(self, agents):
         distances, angles = self.compute_distances_and_angles_landmarks(agents=agents)
         match_factors = self.compute_landmark_match_factors(distances=distances)
         side_factors = self.compute_side_factors(angles, shape=(self.num_agents, len(self.landmarks)))
-        vision_strengths = self.compute_vision_strengths(agents=agents, distances=distances, angles=angles, shape=(self.num_agents, len(self.landmarks)))
+        vision_strengths = self.compute_vision_strengths(head_orientations=agents[:,4], distances=distances, angles=angles, shape=(self.num_agents, len(self.landmarks)))
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
     
     def generate_noise(self):
         return np.random.normal(scale=self.noise_amplitude, size=self.num_agents)
-
-    def compute_new_orientations(self, agents):
+    
+    def compute_delta_orientations(self, agents):
         delta_orientations_conspecifics, distances, angles, vision_strengths = self.compute_delta_orientations_conspecifics(agents=agents)
         if len(self.landmarks) > 0:
             delta_orientations_landmarks = self.compute_delta_orientations_landmarks(agents=agents)
@@ -323,7 +324,10 @@ class PigeonSimulator:
         delta_orientations = self.social_weight * delta_orientations_conspecifics + self.environment_weight * delta_orientations_landmarks
         delta_orientations = np.where((delta_orientations > self.bird_type.max_turn_angle), self.bird_type.max_turn_angle, delta_orientations)
         delta_orientations = np.where((delta_orientations < -self.bird_type.max_turn_angle), -self.bird_type.max_turn_angle, delta_orientations)
+        return delta_orientations, distances, angles, vision_strengths
 
+    def compute_new_orientations(self, agents):
+        delta_orientations, distances, angles, vision_strengths = self.compute_delta_orientations(agents=agents)
         # add noise
         delta_orientations = delta_orientations + self.generate_noise()
 

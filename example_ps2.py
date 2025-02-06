@@ -45,11 +45,11 @@ env_size = (50, 50)
 start_position = (25, 25)
 graph_freq = 10
 visualize = True
-visualize_vision_fields = 1
-visualize_head_directions = True
-follow = True
+visualize_vision_fields = 0
+visualize_head_directions = False
+follow = False
 single_speed = True
-bird_type = Zebrafinch()
+bird_type = Pigeon()
 start_position = (10, 10)
 target_position = (40, 40)
 target_radius = 10
@@ -57,17 +57,11 @@ target_attraction_range = 0
 
 dist_based_zone_factors = True
 
-social_weight = 1
-environment_weight = 0
+social_weight = 0.5
+environment_weight = 1
 
-landmark_1 = Landmark("1", [10, 15])
-landmark_2 = Landmark("2", [15, 40])
-landmark_3 = Landmark("3", [25, 20])
-landmark_4 = Landmark("4", [40, 10])
-landmark_5 = Landmark("5", [48, 25])
-landmark_6 = Landmark("6", [30, 35])
-target = Landmark('target', target_position)
-landmarks = [landmark_1, landmark_2, landmark_3, landmark_4, landmark_5, landmark_6]
+landmark_1 = Landmark('1', corners=[[20, 10], [20, 15], [25, 15], [25, 10]])
+landmarks = [landmark_1]
 
 sim = PigeonSimulator(num_agents=n_agents,
                       bird_type=bird_type,

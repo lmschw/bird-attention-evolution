@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import shapely.ops as shpops
+from shapely import Point
 
 from bird_models.pigeon import Pigeon
 from bird_models.focus_area import FocusArea
@@ -11,7 +13,7 @@ DIST_MOD = 0.001
 
 class PigeonSimulator:
     def __init__(self, num_agents, bird_type, domain_size, start_position, landmarks=[],
-                 social_weight=1, environment_weight=1, limit_turns=True, 
+                 barriers=[], social_weight=1, environment_weight=1, limit_turns=True, 
                  use_distant_dependent_zone_factors=True, weight_options=[], model=None, 
                  single_speed=True, visualize=True, visualize_vision_fields=0, 
                  visualize_head_direction=True, follow=False, graph_freq=5):
@@ -36,8 +38,6 @@ class PigeonSimulator:
 
     def initialize(self):
         agents = self.init_agents()
-
-        self.landmarks_positions = np.array([l.position for l in self.landmarks])
 
         # Setup graph
         self.fig, self.ax = plt.subplots()
@@ -112,10 +112,9 @@ class PigeonSimulator:
 
         if self.environment_weight > 0:
             # Draw landmarks
-            landmark_positions = np.array([landmark.position for landmark in self.landmarks])
-            self.ax.scatter(landmark_positions[:, 0], landmark_positions[:, 1], color="yellow", s=15)
-            for i in range(len(landmark_positions)):
-                self.ax.annotate(self.landmarks[i].name, (landmark_positions[i,0], landmark_positions[i,1]), color="white")
+            for landmark in self.landmarks:
+                self.ax.add_patch(landmark.get_patch_for_display())
+                self.ax.annotate(landmark.id, landmark.get_annotation_point(), color="white")
 
         # Draw agents
         uv_coords = self.compute_u_v_coordinates_for_angles(agents[:,2])
@@ -189,18 +188,43 @@ class PigeonSimulator:
 
         return self.compute_distances_and_angles(headings=agents[:,2], xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2)
     
+    def compute_nearest_points_to_landmarks(self, agents):
+        positions = np.column_stack((agents[:,0], agents[:,1]))
+        nearest_points = []
+        for landmark in self.landmarks:
+            points_landmark = []
+            for position in positions:
+                point = shpops.nearest_points(Point(position), landmark.get_geometry())[1] # first point is the nearest point in the position, the second on the landmark
+                points_landmark.append([point.x, point.y])
+            nearest_points.append(points_landmark)
+        return nearest_points
+    
     def compute_distances_and_angles_landmarks(self, agents):
         """
         Computes and returns the distances and its x and y elements for all pairs of agents
 
         """
+        nearest_points = np.array(self.compute_nearest_points_to_landmarks(agents=agents))
         # Build meshgrid 
         pos_xs = agents[:, 0]
         pos_ys = agents[:, 1]
-        xx1, xx2 = np.meshgrid(pos_xs, self.landmarks_positions[:, 0])
-        yy1, yy2 = np.meshgrid(pos_ys, self.landmarks_positions[:, 1])
 
-        return self.compute_distances_and_angles(headings=agents[:,2], xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2, transpose_for_angles=True)
+        # Calculate distances
+        x_diffs = nearest_points[:,:,0] - pos_xs[np.newaxis, :]
+        x_diffs = x_diffs.T
+        y_diffs = nearest_points[:,:,1] - pos_ys[np.newaxis, :]
+        y_diffs = y_diffs.T
+        distances = np.sqrt(np.multiply(x_diffs, x_diffs) + np.multiply(y_diffs, y_diffs))  
+        distances[distances > self.bird_type.sensing_range] = np.inf
+        distances[distances == 0.0] = np.inf
+        #print(f"Dists: {distances}")
+    
+        headings = agents[:,2]
+        angles = self.wrap_to_pi(np.arctan2(y_diffs, x_diffs) - headings[:, np.newaxis])
+        #print(f"Angles: {angles}")
+
+        return distances, angles
+        #return self.compute_distances_and_angles(headings=agents[:,2], xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2, transpose_for_angles=False)
     
     def compute_conspecific_match_factors(self, distances):
         repulsion_zone = distances < self.bird_type.preferred_distance_left_right[0]
@@ -215,6 +239,16 @@ class PigeonSimulator:
 
         match_factors = np.where(repulsion_zone, rep_factors, match_factors)
         match_factors = np.where(attraction_zone, att_factors, match_factors)
+        return match_factors
+    
+    def compute_landmark_match_factors(self, distances):
+        repulsion_zone = distances < self.bird_type.preferred_distance_left_right[0]
+        match_factors = np.zeros((self.num_agents, len(self.landmarks)))
+        if self.use_distant_dependent_zone_factors:
+            rep_factors = -(1/distances) # stronger repulsion the closer the other is
+        else:
+            rep_factors = np.full(self.num_agents, -1)
+        match_factors = np.where(repulsion_zone, rep_factors, match_factors)
         return match_factors
     
     def compute_side_factors(self, angles, shape):
@@ -277,9 +311,10 @@ class PigeonSimulator:
     
     def compute_delta_orientations_landmarks(self, agents):
         distances, angles = self.compute_distances_and_angles_landmarks(agents=agents)
+        match_factors = self.compute_landmark_match_factors(distances=distances)
         side_factors = self.compute_side_factors(angles, shape=(self.num_agents, len(self.landmarks)))
-        vision_strengths = self.compute_vision_strengths(agents=agents, distances=distances.T, angles=angles, shape=(self.num_agents, len(self.landmarks)))
-        return np.sum(side_factors * vision_strengths, axis=1)
+        vision_strengths = self.compute_vision_strengths(agents=agents, distances=distances, angles=angles, shape=(self.num_agents, len(self.landmarks)))
+        return np.sum(match_factors * side_factors * vision_strengths, axis=1)
     
     def compute_new_orientations(self, agents):
         delta_orientations_conspecifics, distances, angles, vision_strengths = self.compute_delta_orientations_conspecifics(agents=agents)

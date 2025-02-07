@@ -62,10 +62,11 @@ landmarks = []
 
 num_prey = 10
 bird_type_prey = Pigeon()
-num_predators = 1
+num_predators = 2
 bird_type_predator = Hawk()
 start_position_prey = (250, 250)
 start_position_predator = (100, 100)
+pack_hunting = False
 visualize_vision_fields_prey = 1
 visualize_vision_fields_predator = 1
 

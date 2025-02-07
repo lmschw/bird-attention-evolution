@@ -41,14 +41,14 @@ nn.add(ActivationLayer(activation=snn.tanh, activation_prime=snn.tanh_prime))
 
 n_agents = 7
 n_steps = 10000
-env_size = (50, 50)
+env_size = (500, 500)
 noise_amplitude = 0
-start_position = (25, 25)
+start_position = (250, 20)
 graph_freq = 10
 visualize = True
 visualize_vision_fields = 0
 visualize_head_directions = False
-follow = False
+follow = True
 single_speed = True
 bird_type = Pigeon()
 start_position = (10, 10)
@@ -56,7 +56,7 @@ start_position = (10, 10)
 dist_based_zone_factors = True
 
 social_weight = 0.5
-environment_weight = 1
+environment_weight = 0
 
 landmark_1 = Landmark('1', corners=[[20, 10], [20, 15], [25, 15], [25, 10]])
 landmark_2 = Landmark('2', corners=[[20, 0], [20, 5], [25, 5], [25, 0]])

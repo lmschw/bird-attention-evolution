@@ -14,7 +14,7 @@ DIST_MOD = 0.001
 
 class PigeonSimulatorWithPredators(PigeonSimulator):
     def __init__(self, num_prey, bird_type_prey, num_predators, bird_type_predator, domain_size, start_position_prey, 
-                 start_position_predator, landmarks=[], noise_amplitude=0, social_weight=1, environment_weight=1,
+                 start_position_predator, pack_hunting=False, landmarks=[], noise_amplitude=0, social_weight=1, environment_weight=1,
                  other_type_weight=1, limit_turns=True, use_distant_dependent_zone_factors=True, weight_options=[], 
                  model=None, single_speed=True, visualize=True, visualize_vision_fields_prey=0, 
                  visualize_vision_fields_predator=0, visualize_head_direction=True, follow=False, graph_freq=5):
@@ -43,9 +43,13 @@ class PigeonSimulatorWithPredators(PigeonSimulator):
         self.bird_type_predator = bird_type_predator
         self.start_position_prey = start_position_prey
         self.start_position_predator = start_position_predator
+        self.pack_hunting = pack_hunting
         self.other_type_weight = other_type_weight
         self.visualize_vision_fields_prey = visualize_vision_fields_prey
         self.visualize_vision_fields_predator = visualize_vision_fields_predator
+
+        if self.num_predators == 1:
+            self.pack_hunting = False
 
     def initialize(self):
         prey, predators = self.init_agents()
@@ -196,8 +200,8 @@ class PigeonSimulatorWithPredators(PigeonSimulator):
         distances, angles = self.compute_distances_and_angles_other_type(predators, prey)
         match_factors = np.zeros((self.num_predators, self.num_prey)) # always attracted
         min_neighbours = np.min(distances.T, axis=1)
-        #print(f"min neighbours: {min_neighbours}")
-        match_factors = np.where(distances.T == min_neighbours, -1, match_factors)
+        print(f"min neighbours: {min_neighbours}")
+        match_factors = np.where(distances.T == min_neighbours[:,np.newaxis], -1, match_factors)
         #print(f"selected prey: {match_factors}")
         side_factors = self.compute_side_factors(angles, shape=(self.num_predators, self.num_prey))
         vision_strengths = self.compute_vision_strengths(head_orientations=predators[:,4], distances=distances.T, angles=angles, shape=(self.num_predators, self.num_prey))
@@ -225,8 +229,12 @@ class PigeonSimulatorWithPredators(PigeonSimulator):
         else:
             delta_orientations_other_type = 0
 
+        social_weight = self.social_weight
+        if not is_prey and not self.pack_hunting:
+            social_weight = 0
+
         #print(delta_orientations_landmarks)
-        delta_orientations = self.social_weight * delta_orientations_conspecifics + self.environment_weight * delta_orientations_landmarks + self.other_type_weight * delta_orientations_other_type
+        delta_orientations = social_weight * delta_orientations_conspecifics + self.environment_weight * delta_orientations_landmarks + self.other_type_weight * delta_orientations_other_type
         delta_orientations = np.where((delta_orientations > bird_type.max_turn_angle), bird_type.max_turn_angle, delta_orientations)
         delta_orientations = np.where((delta_orientations < -bird_type.max_turn_angle), -bird_type.max_turn_angle, delta_orientations)
         return delta_orientations, distances, angles, vision_strengths

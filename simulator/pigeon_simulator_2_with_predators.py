@@ -149,7 +149,7 @@ class PigeonSimulatorWithPredators(PigeonSimulator):
         self.ax.clear()
 
         self.graph_vision_fields(prey, self.bird_type_prey, self.visualize_vision_fields_prey, self.colours_prey)
-        self.graph_vision_fields(prey, self.bird_type_predator, self.visualize_vision_fields_predator, self.colours_predator)
+        self.graph_vision_fields(predators, self.bird_type_predator, self.visualize_vision_fields_predator, self.colours_predator)
 
         if self.environment_weight > 0:
             # Draw landmarks

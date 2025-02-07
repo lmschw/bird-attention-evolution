@@ -302,6 +302,7 @@ class PigeonSimulator:
         match_factors = self.compute_conspecific_match_factors(distances=distances)
         side_factors = self.compute_side_factors(angles, shape=(self.num_agents, self.num_agents))
         vision_strengths = self.compute_vision_strengths(head_orientations=agents[:,4], distances=distances, angles=angles, shape=(self.num_agents, self.num_agents))
+        np.fill_diagonal(vision_strengths, 0)
         return np.sum(match_factors * side_factors * vision_strengths, axis=1), distances, angles, vision_strengths
     
     def compute_delta_orientations_landmarks(self, agents):

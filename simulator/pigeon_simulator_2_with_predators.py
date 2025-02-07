@@ -182,45 +182,53 @@ class PigeonSimulatorWithPredators(PigeonSimulator):
         xx1, xx2 = np.meshgrid(focus_group_xs, other_group_xs)
         yy1, yy2 = np.meshgrid(focus_group_ys, other_group_ys)
 
-        return self.compute_distances_and_angles(headings=focus_group[:,2], xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2)
+        return self.compute_distances_and_angles(headings=focus_group[:,2], xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2, transpose_for_angles=True)
     
 
     def compute_delta_orientations_away_from_predators(self, prey, predators):
         distances, angles = self.compute_distances_and_angles_other_type(prey, predators)
-        match_factors = np.full((self.num_prey, self.num_predators), -1) # always repulsed
+        match_factors = np.full((self.num_prey, self.num_predators), 1) # always repulsed
         side_factors = self.compute_side_factors(angles, shape=(self.num_prey, self.num_predators))
-        vision_strengths = self.compute_vision_strengths(head_orientations=prey[:,4], distances=distances, angles=angles, shape=(self.num_prey, self.num_predators))
+        vision_strengths = self.compute_vision_strengths(head_orientations=prey[:,4], distances=distances.T, angles=angles, shape=(self.num_prey, self.num_predators))
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
 
     def compute_delta_orientations_towards_prey(self, prey, predators):
         distances, angles = self.compute_distances_and_angles_other_type(predators, prey)
         match_factors = np.zeros((self.num_predators, self.num_prey)) # always attracted
         min_neighbours = np.min(distances.T, axis=1)
-        match_factors = np.where(distances == min_neighbours, 1, match_factors)
+        #print(f"min neighbours: {min_neighbours}")
+        match_factors = np.where(distances.T == min_neighbours, -1, match_factors)
+        #print(f"selected prey: {match_factors}")
         side_factors = self.compute_side_factors(angles, shape=(self.num_predators, self.num_prey))
-        vision_strengths = self.compute_vision_strengths(head_orientations=predators[:,4], distances=distances, angles=angles, shape=(self.num_predators, self.num_prey))
+        vision_strengths = self.compute_vision_strengths(head_orientations=predators[:,4], distances=distances.T, angles=angles, shape=(self.num_predators, self.num_prey))
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
 
     def compute_delta_orientations(self, prey, predators, is_prey):
         if is_prey:
             agents = prey
+            bird_type = self.bird_type_prey
         else:
             agents = predators
+            bird_type = self.bird_type_predator
+
         delta_orientations_conspecifics, distances, angles, vision_strengths = self.compute_delta_orientations_conspecifics(agents=agents)
-        if len(self.landmarks) > 0:
+        if len(self.landmarks) > 0 and self.environment_weight != 0:
             delta_orientations_landmarks = self.compute_delta_orientations_landmarks(agents=agents)
         else:
             delta_orientations_landmarks = 0
 
-        if is_prey:
-            delta_orientations_other_type = self.compute_delta_orientations_away_from_predators(prey, predators)
+        if self.other_type_weight != 0:
+            if is_prey:
+                delta_orientations_other_type = self.compute_delta_orientations_away_from_predators(prey, predators)
+            else:
+                delta_orientations_other_type = self.compute_delta_orientations_towards_prey(prey, predators)
         else:
-            delta_orientations_other_type = self.compute_delta_orientations_towards_prey(prey, predators)
+            delta_orientations_other_type = 0
 
         #print(delta_orientations_landmarks)
         delta_orientations = self.social_weight * delta_orientations_conspecifics + self.environment_weight * delta_orientations_landmarks + self.other_type_weight * delta_orientations_other_type
-        delta_orientations = np.where((delta_orientations > self.bird_type.max_turn_angle), self.bird_type.max_turn_angle, delta_orientations)
-        delta_orientations = np.where((delta_orientations < -self.bird_type.max_turn_angle), -self.bird_type.max_turn_angle, delta_orientations)
+        delta_orientations = np.where((delta_orientations > bird_type.max_turn_angle), bird_type.max_turn_angle, delta_orientations)
+        delta_orientations = np.where((delta_orientations < -bird_type.max_turn_angle), -bird_type.max_turn_angle, delta_orientations)
         return delta_orientations, distances, angles, vision_strengths
     
     def compute_new_orientations_for_type(self, prey, predators, is_prey):
@@ -270,8 +278,8 @@ class PigeonSimulatorWithPredators(PigeonSimulator):
 
             prey[:,2] = prey_o
             prey[:,4] = prey_ho
-            prey[:,2] = predator_o
-            prey[:,4] = predator_ho
+            predators[:,2] = predator_o
+            predators[:,4] = predator_ho
 
             if not (self.current_step % self.graph_freq) and self.visualize and self.current_step > 0:
                 self.graph_agents(prey=prey, predators=predators)

@@ -6,7 +6,7 @@ from bird_models.focus_area import FocusArea
 NAME = "Hawk"
 AVERAGE_SPEED = 55 # m/s
 AVERAGE_SPEED = 0.55 # m/s
-AVERAGE_SPEED = 0.01
+#AVERAGE_SPEED = 0.01
 MIN_SPEED = AVERAGE_SPEED /2
 MAX_SPEED = AVERAGE_SPEED + (AVERAGE_SPEED/2)
 SPEEDS = (MIN_SPEED, AVERAGE_SPEED, MAX_SPEED)
@@ -49,7 +49,7 @@ FOVEAL_REGION_LEFT = FocusArea(name=FOVEAL_REGION_NAME,
 
 FOCUS_AREAS = [FOVEAL_REGION_LEFT, FOVEAL_REGION_RIGHT]
 
-class Pigeon(Bird):
+class Hawk(Bird):
     def __init__(self):
         super().__init__(name=NAME,
                          speeds=SPEEDS,

@@ -41,8 +41,8 @@ nn.add(fully_connected_layer)
 nn.add(ActivationLayer(activation=snn.tanh, activation_prime=snn.tanh_prime))
 
 n_steps = 10000
-env_size = (50, 50)
-noise_amplitude = 1
+env_size = (500, 500)
+noise_amplitude = 0.1
 graph_freq = 10
 visualize = True
 visualize_head_directions = False
@@ -60,18 +60,18 @@ landmark_3 = Landmark('3', corners=[[20, 20], [20, 25], [25, 25], [25, 20]])
 landmarks = [landmark_1, landmark_2, landmark_3]
 landmarks = []
 
-num_prey = 2
+num_prey = 10
 bird_type_prey = Pigeon()
 num_predators = 1
 bird_type_predator = Hawk()
-start_position_prey = (25, 25)
-start_position_predator = (10, 10)
+start_position_prey = (250, 250)
+start_position_predator = (100, 100)
 visualize_vision_fields_prey = 1
 visualize_vision_fields_predator = 1
 
-social_weight = 0
+social_weight = 0.5
 environment_weight = 0
-other_type_weight = 1
+other_type_weight = 0.5
 
 sim = PigeonSimulatorWithPredators(num_prey=num_prey,
                                    bird_type_prey=bird_type_prey,

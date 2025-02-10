@@ -10,6 +10,7 @@ from shapely.ops import nearest_points
 
 import vision.perception_strength as pstrength
 import simulator.weight_options as wo
+import general.angle_conversion as ac
 
 # AE Constants
 EPSILON = 12
@@ -47,22 +48,11 @@ class PigeonSimulatorAe:
         self.follow = follow
         self.graph_freq = graph_freq
         self.curr_agents = None
-        self.centroid_trajectory = []
-        self.fly_lengths = []
-        self.collective_fly_lengths = []
-        self.n_leaders = 0
-        self.historic_leaders = 0
-        self.flights_completed = 0
-        self.leaders_demoted = 0
-        self.states = []
-        self.centroid_trajectory = []
-        self.stabilities = np.array([])
         self.states = []
         self.initialize()
 
     def initialize(self):
         self.init_agents(self.num_agents)
-        self.sigmas = np.full(self.num_agents, SIGMA)
         self.current_step = 0
 
         # Setup graph
@@ -77,7 +67,7 @@ class PigeonSimulatorAe:
             self.ax.set_ylim(0, self.domain_size[1])
 
 
-    def init_agents(self, n_agents):
+    def init_agents(self):
         rng = np.random
         n_points_x = int(np.ceil(np.sqrt(self.num_agents)))
         n_points_y = int(np.ceil(np.sqrt(self.num_agents)))
@@ -106,13 +96,8 @@ class PigeonSimulatorAe:
         self.curr_agents = np.column_stack([pos_xs, pos_ys, pos_hs, head_angles])
 
     def graph_agents(self):
-        """
-        Visualizes the state of the simulation with matplotlib
-
-        """  
         self.ax.clear()
 
-        # Draw agents
         self.ax.scatter(self.curr_agents[:, 0], self.curr_agents[:, 1], color="white", s=15)
         self.ax.quiver(self.curr_agents[:, 0], self.curr_agents[:, 1],
                     np.cos(self.curr_agents[:, 2]), np.sin(self.curr_agents[:, 2]),
@@ -122,14 +107,7 @@ class PigeonSimulatorAe:
             self.ax.quiver(self.curr_agents[:, 0], self.curr_agents[:, 1],
                         np.cos(self.curr_agents[:, 3]), np.sin(self.curr_agents[:, 3]),
                         color="yellow", width=0.005, scale=50)
-        """ 
-        # Draw Trajectory
-        if len(self.centroid_trajectory) > 1:
-            x_traj, y_traj = zip(*self.centroid_trajectory)
-            self.ax.plot(x_traj, y_traj, color="orange")
-        """
-
-
+    
         self.ax.set_facecolor((0, 0, 0))
 
         centroid_x, centroid_y = np.mean(self.curr_agents[:, 0]), np.mean(self.curr_agents[:, 1])
@@ -143,44 +121,28 @@ class PigeonSimulatorAe:
         plt.pause(0.000001)
 
     def compute_distances_and_angles(self):
-        """
-        Computes and returns the distances and its x and y elements for all pairs of agents
-
-        """
         headings = self.curr_agents[:, 2]
 
-        # Build meshgrid 
         pos_xs = self.curr_agents[:, 0]
         pos_ys = self.curr_agents[:, 1]
         xx1, xx2 = np.meshgrid(pos_xs, pos_xs)
         yy1, yy2 = np.meshgrid(pos_ys, pos_ys)
 
-        # Calculate distances
         x_diffs = xx1 - xx2
         y_diffs = yy1 - yy2
         distances = np.sqrt(np.multiply(x_diffs, x_diffs) + np.multiply(y_diffs, y_diffs))  
         distances[distances > self.animal_type.sensing_range] = np.inf
-        distances[distances == 0.0] = np.inf
-        #print(f"Dists: {distances}")
-        
+        distances[distances == 0.0] = np.inf        
 
-        # Calculate angles in the local frame of reference
         headings = self.curr_agents[:, 2]
-        angles = self.wrap_to_pi(np.arctan2(y_diffs, x_diffs) - headings[:, np.newaxis])
-        # print(f"Angles: {angles}")
+        angles = ac.wrap_to_pi(np.arctan2(y_diffs, x_diffs) - headings[:, np.newaxis])
 
         return distances, angles
     
 
     def get_pi_elements(self, distances_conspecifics, angles_conspecifics, perception_strengths_conspecifics):
-        """
-        Calculates the x and y components of the proximal control vector
-
-        """  
-        #forces_old = -EPSILON * (2 * (self.sigmas[:, np.newaxis] ** 4 / distances ** 5) - (self.sigmas[:, np.newaxis] ** 2 / distances ** 3))
         forces_conspecifics = -EPSILON * perception_strengths_conspecifics * PERCEPTION_STRENGTH_MODIFIER * (2 * (self.sigmas[:, np.newaxis] ** 4 / distances_conspecifics ** 5) - (self.sigmas[:, np.newaxis] ** 2 / distances_conspecifics ** 3))
         forces_conspecifics[distances_conspecifics == np.inf] = 0.0
-
 
         p_x_conspecifics = np.sum(np.multiply(forces_conspecifics, np.cos(angles_conspecifics)), axis=1)
         p_y_conspecifics = np.sum(np.multiply(forces_conspecifics, np.sin(angles_conspecifics)), axis=1)
@@ -191,13 +153,8 @@ class PigeonSimulatorAe:
         return p_x, p_y
 
     def get_hi_elements(self):
-        """
-        Calculates the x and y components of the heading alignment vector
-
-        """  
         headings = self.curr_agents[:, 2]
 
-        # All this is doing is getting the vectorial avg of the headings
         alignment_coss = np.sum(np.cos(headings))
         alignment_sins = np.sum(np.sin(headings))
         alignment_angs = np.arctan2(alignment_sins, alignment_coss)
@@ -207,22 +164,10 @@ class PigeonSimulatorAe:
         h_y = alignment_mags * np.sin(alignment_angs - headings)
 
         return h_x, h_y
-    
-    def get_gi_elements(self, distances, angles):
-        """
-        Calculates the x and y components of the goal direction vector
-
-        """  
-        pass
 
     def compute_fi(self):
-        """
-        Computes the virtual force vector components
-
-        """  
         dists_conspecifics, angles_conspecifics = self.compute_distances_and_angles()
         perception_strengths_conspecifics, min_agent = pstrength.compute_perception_strengths(angles_conspecifics, dists_conspecifics, self.animal_type)
-
 
         p_x, p_y = self.get_pi_elements(distances_conspecifics=dists_conspecifics,
                                         angles_conspecifics=angles_conspecifics,
@@ -231,17 +176,10 @@ class PigeonSimulatorAe:
 
         f_x = ALPHA * p_x + BETA * h_x 
         f_y = ALPHA * p_y + BETA * h_y 
-        # print(f"Fx: {f_x}")
-        # print(f"Fy: {f_y}")
         
-
         return f_x, f_y
     
     def compute_u_w(self, f_x, f_y):
-        """
-        Computes u and w given the components of Fi
-
-        """
         u = K1 * f_x + UC
         u[u > UMAX] = UMAX
         u[u < 0] = 0.0
@@ -268,25 +206,16 @@ class PigeonSimulatorAe:
         return new_head_orientations
     
     def update_agents(self):
-        """
-        Updates agents duhh
-
-        """  
-        # Calculate forces
         f_x, f_y = self.compute_fi()
         u, w = self.compute_u_w(f_x, f_y)
 
-        # Project to local frame
         headings = self.curr_agents[:, 2]
         x_vel = np.multiply(u, np.cos(headings))
         y_vel = np.multiply(u, np.sin(headings))
-        # print(f"X add: {x_vel}")
-        # print(f"Y add: {y_vel}")
 
-        # Update agents
         self.curr_agents[:, 0] = self.curr_agents[:, 0] + x_vel * DT
         self.curr_agents[:, 1] = self.curr_agents[:, 1] + y_vel * DT
-        self.curr_agents[:, 2] = self.wrap_to_pi(self.curr_agents[:, 2] + w * DT)
+        self.curr_agents[:, 2] = ac.wrap_to_pi(self.curr_agents[:, 2] + w * DT)
         self.curr_agents[:, 3] = self.update_head_orientations(self.curr_agents)
 
     def target_reached(self):
@@ -309,36 +238,18 @@ class PigeonSimulatorAe:
             t += DT
             self.current_step = t
 
-            # Update simulation
             self.update_agents()
             
-            # Update experiment data
             self.states.append(self.curr_agents.copy())
             centroid_x, centroid_y = np.mean(self.curr_agents[:, 0]), np.mean(self.curr_agents[:, 1])
             self.centroid_trajectory.append((centroid_x, centroid_y))
 
-            # if not (self.current_step % 250):
-            #     print(f"------------------------ Iteration {self.current_step} ------------------------")
-
             if not (self.current_step % self.graph_freq) and self.visualize and self.current_step > 0:
                  self.graph_agents()
-        # if self.target_reached():
-           # print(f"target reached after: {t} timesteps")
 
         plt.close()
         return self.states
 
 
-    # --------------------------------------------------------------------- Utils ---------------------------------------------------------------------
 
-    def wrap_to_pi(self, x):
-        """
-        Wraps the angles to [-pi, pi]
-        """
-        x = x % (2 * np.pi)
-        x = (x + (2 * np.pi)) % (2 * np.pi)
-
-        x[x > np.pi] = x[x > np.pi] - (2 * np.pi)
-
-        return x
         

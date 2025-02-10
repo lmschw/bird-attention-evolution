@@ -22,6 +22,17 @@ def get_relative_positions_landmarks(agents, landmarks):
 def get_relative_headings(agents):  
     return agents[:,np.newaxis,2]-agents[:,2]    
 
+def wrap_to_pi(self, x):
+    """
+    Wraps the angles to [-pi, pi]
+    """
+    x = x % (2 * np.pi)
+    x = (x + (2 * np.pi)) % (2 * np.pi)
+
+    x[x > np.pi] = x[x > np.pi] - (2 * np.pi)
+
+    return x
+
 if __name__ == "__main__":
     x = np.array([ 1,  2,  3])
     y = np.array([1, 2, 3])

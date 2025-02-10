@@ -13,7 +13,7 @@ import genetic.metrics_functions as metfunc
 import general.normalisation as normal
 import loggers.logger as logger
 
-from simulator.ae_simulator import PigeonSimulatorAe
+from simulator.ae_with_perception_strength_simulator import PigeonSimulatorAe
 from animal_models.pigeon import Pigeon
 
 class DifferentialEvolution:

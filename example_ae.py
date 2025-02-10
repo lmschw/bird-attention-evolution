@@ -1,6 +1,6 @@
 from animal_models.pigeon import Pigeon
 from area_models.landmark import Landmark
-from simulator.ae_simulator import PigeonSimulatorAe
+from simulator.ae_with_perception_strength_simulator import PigeonSimulatorAe
 
 
 n_agents = 10

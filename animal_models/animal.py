@@ -1,13 +1,12 @@
-import numpy as np
 
-class Bird:
-    # TODO implement flapping frequency and energy level
-    def __init__(self, name, speeds, wingspan, length, head_range_half, max_turn_angle,
+class Animal:
+    # TODO implement energy level
+    def __init__(self, name, speeds, width, length, head_range_half, max_turn_angle,
                  focus_areas, preferred_distance_front_back, preferred_distance_left_right,
                  sensing_range):
         self.name = name
         self.speeds = speeds
-        self.wingspan = wingspan
+        self.width = width
         self.length = length
         self.head_range_half = head_range_half
         self.max_turn_angle = max_turn_angle

@@ -1,7 +1,7 @@
 import numpy as np
 
-from bird_models.bird import Bird
-from bird_models.focus_area import FocusArea
+from animal_models.bird import Bird
+from animal_models.focus_area import FocusArea
 
 NAME = "Hawk"
 AVERAGE_SPEED = 55 # m/s

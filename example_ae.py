@@ -1,4 +1,4 @@
-from bird_models.pigeon import Pigeon
+from animal_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 from simulator.ae_simulator import PigeonSimulatorAe
 

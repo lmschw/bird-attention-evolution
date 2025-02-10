@@ -14,7 +14,7 @@ import general.normalisation as normal
 import loggers.logger as logger
 
 from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator
-from bird_models.pigeon import Pigeon
+from animal_models.pigeon import Pigeon
 
 class DifferentialEvolution:
     def __init__(self, tmax, num_agents=None, animal_type=Pigeon(), domain_size=(50,50), weight_options=[],

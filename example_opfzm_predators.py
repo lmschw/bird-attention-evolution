@@ -2,9 +2,9 @@ import numpy as np
 
 from simulator.orientation_perception_free_zone_model_with_predators import OrientationPerceptionFreeZoneModelSimulatorWithPredators
 from simulator.enum_weight_options import WeightOptions
-from bird_models.pigeon import Pigeon
-from bird_models.zebrafinch import Zebrafinch
-from bird_models.hawk import Hawk
+from animal_models.pigeon import Pigeon
+from animal_models.zebrafinch import Zebrafinch
+from animal_models.hawk import Hawk
 from area_models.landmark import Landmark
 
 from neural_network.activation_layer import ActivationLayer

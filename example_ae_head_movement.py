@@ -1,7 +1,7 @@
 import numpy as np
 
 from simulator.enum_weight_options import WeightOptions
-from bird_models.pigeon import Pigeon
+from animal_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 
 from genetic.genetic_algorithm_ae import DifferentialEvolution

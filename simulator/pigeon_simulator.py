@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from area_models.landmark import Landmark
-from bird_models.pigeon import Pigeon
+from animal_models.pigeon import Pigeon
 import vision.environment_vision as env_vision
 import general.normalisation as gnormal
 import general.angle_conversion as ac
@@ -31,7 +31,7 @@ class PigeonSimulator:
         rng = np.random
         n_points_x = self.n
         n_points_y = self.n
-        spacing = self.animal_type.wingspan
+        spacing = self.animal_type.width
         init_x = 0
         init_y = 0
 

@@ -5,6 +5,7 @@ from area_models.landmark import Landmark
 from bird_models.pigeon import Pigeon
 import vision.environment_vision as env_vision
 import general.normalisation as gnormal
+import general.angle_conversion as ac
 
 """
 I am a pigeon. I am part of a flock. I am flying home.
@@ -64,7 +65,7 @@ class PigeonSimulator:
         Returns:
             An array of floats representing the local order for every individual at the current time step (values between 0 and 1)
         """
-        uv_coordinates = self.compute_u_v_coordinates_for_angles(orientations)
+        uv_coordinates = ac.compute_u_v_coordinates_for_angles(orientations)
         sumOrientation = np.sum(perception_strengths[:,:,np.newaxis]*uv_coordinates[np.newaxis,:,:],axis=1)
         perception_strengths = gnormal.normalise(values=perception_strengths)
         perception_strengths[np.count_nonzero(perception_strengths, axis=1) == 0] = np.inf
@@ -134,37 +135,9 @@ class PigeonSimulator:
         orientation_conspecifics += np.array(visual_feeback[2])
         return orientation_conspecifics + np.random.random(orientation_conspecifics.shape)
 
-    def compute_u_v_coordinates_for_angles(self, angles):
-        """
-        Computes the (u,v)-coordinates based on the angle.
-
-        Params:
-            - angle (float): the angle in radians
-
-        Returns:
-            An array containing the [u, v]-coordinates corresponding to the angle.
-        """
-        # compute the uv-coordinates
-        U = np.cos(angles)
-        V = np.sin(angles)
-    
-        return np.column_stack((U,V))
-    
-    def compute_angles_for_orientations(self, orientations):
-        """
-        Computes the angle in radians based on the (u,v)-coordinates of the current orientation.
-
-        Params:
-            - orientation (array of floats): the current orientation in (u,v)-coordinates
-
-        Returns:
-            A float representin the angle in radians.
-        """
-        return np.arctan2(orientations[:, 1], orientations[:, 0])
-
     def update_positions(self, agents):
         positions = np.column_stack([agents[:,0], agents[:,1]])
-        positions += (self.compute_u_v_coordinates_for_angles(agents[:, 2]).T * agents[:, 6]).T
+        positions += (ac.compute_u_v_coordinates_for_angles(agents[:, 2]).T * agents[:, 6]).T
         agents[:, 0] = positions[:, 0]
         agents[:, 1] = positions[:, 1]
         return agents

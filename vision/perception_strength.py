@@ -1,17 +1,18 @@
 import numpy as np
 
 import general.normalisation as normal
+import general.angle_conversion as ac
 
 def compute_perception_strengths(azimuth_angles_positions, distances, animal_type, is_conspecifics=True):
-    azimuth_angles_positions_pi = wrap_to_pi(azimuth_angles_positions)
+    azimuth_angles_positions_pi = ac.wrap_to_pi(azimuth_angles_positions)
     overall_perception_strengths = []
     min_distances = []
     min_angles = []
     for focus_area in animal_type.focus_areas:
         # The closer to the focus, the stronger the perception of the input
         focus = focus_area.azimuth_angle_position_horizontal
-        min_angle = wrap_angle_to_pi(focus - focus_area.angle_field_horizontal)
-        max_angle = wrap_angle_to_pi(focus + focus_area.angle_field_horizontal)
+        min_angle = ac.wrap_angle_to_pi(focus - focus_area.angle_field_horizontal)
+        max_angle = ac.wrap_angle_to_pi(focus + focus_area.angle_field_horizontal)
 
         # the base perception strength is equal to the percentage of the visual field based around the focus
         strengths = 1-(np.absolute(focus - azimuth_angles_positions_pi) / focus_area.angle_field_horizontal)
@@ -59,22 +60,3 @@ def compute_perception_strengths(azimuth_angles_positions, distances, animal_typ
     normalised_reshaped_perception_strengths = normalised_reshaped_perception_strengths.reshape(distances.shape)
     return normalised_reshaped_perception_strengths, (min_dists_final, min_angles_final, min_dist_idx_basic)
 
-def wrap_to_pi(arr):
-    """
-    Wrapes the angles to [-pi, pi]
-
-    """
-    arr = arr % (np.pi * 2)
-    arr = (arr + (np.pi * 2)) % (np.pi * 2)
-
-    arr[arr > np.pi] = arr[arr > np.pi] - (np.pi * 2)
-
-    return arr
-
-def wrap_angle_to_pi(x):
-    if x < 0:
-        x += 2 * np.pi
-    x = x % (2*np.pi)
-    if x > np.pi:
-        return -(2*np.pi - x)
-    return x

@@ -33,6 +33,45 @@ def wrap_to_pi(self, x):
 
     return x
 
+def wrap_angle_to_pi(x):
+    if x < 0:
+        x += 2 * np.pi
+    x = x % (2*np.pi)
+    if x > np.pi:
+        return -(2*np.pi - x)
+    return x
+
+def wrap_to_2_pi(self, x):
+    return (2*np.pi*x) % (2*np.pi)
+
+def compute_u_v_coordinates_for_angles(self, angles):
+    """
+    Computes the (u,v)-coordinates based on the angle.
+
+    Params:
+        - angle (float): the angle in radians
+
+    Returns:
+        An array containing the [u, v]-coordinates corresponding to the angle.
+    """
+    # compute the uv-coordinates
+    U = np.cos(angles)
+    V = np.sin(angles)
+
+    return np.column_stack((U,V))
+
+def compute_angles_for_orientations(self, orientations):
+    """
+    Computes the angle in radians based on the (u,v)-coordinates of the current orientation.
+
+    Params:
+        - orientation (array of floats): the current orientation in (u,v)-coordinates
+
+    Returns:
+        A float representin the angle in radians.
+    """
+    return np.arctan2(orientations[:, 1], orientations[:, 0])
+
 if __name__ == "__main__":
     x = np.array([ 1,  2,  3])
     y = np.array([1, 2, 3])

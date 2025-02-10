@@ -33,12 +33,12 @@ DES_DIST = SIGMA * 2**(1/2)
 PERCEPTION_STRENGTH_MODIFIER = 5
 
 class PigeonSimulatorAe:
-    def __init__(self, animal_type, num_agents, env_size, start_position,
+    def __init__(self, animal_type, num_agents, domain_size, start_position,
                  weight_options=[], model=None,
                  visualize=True, visualize_head_direction=True, follow=True, graph_freq=5):
         self.animal_type = animal_type
         self.num_agents = num_agents
-        self.env_size = env_size
+        self.domain_size = domain_size
         self.start_position = start_position
         self.weight_options = weight_options
         self.model = model
@@ -73,8 +73,8 @@ class PigeonSimulatorAe:
             self.ax.set_xlim(centroid_x - 7.5, centroid_x + 7.5)
             self.ax.set_ylim(centroid_y - 7.5, centroid_y + 7.5)
         else:
-            self.ax.set_xlim(0, self.env_size[0])
-            self.ax.set_ylim(0, self.env_size[1])
+            self.ax.set_xlim(0, self.domain_size[0])
+            self.ax.set_ylim(0, self.domain_size[1])
 
 
     def init_agents(self, n_agents):
@@ -137,8 +137,8 @@ class PigeonSimulatorAe:
             self.ax.set_xlim(centroid_x-10, centroid_x+10)
             self.ax.set_ylim(centroid_y-10, centroid_y+10)
         else:
-            self.ax.set_xlim(0, self.env_size[0])
-            self.ax.set_ylim(0, self.env_size[1])
+            self.ax.set_xlim(0, self.domain_size[0])
+            self.ax.set_ylim(0, self.domain_size[1])
 
         plt.pause(0.000001)
 

@@ -99,7 +99,7 @@ class DifferentialEvolution:
         for i in range(self.num_iterations_per_individual):
             simulator = PigeonSimulatorAe(animal_type=self.animal_type,
                                           num_agents=self.num_agents,
-                                          env_size=self.domain_size,
+                                          domain_size=self.domain_size,
                                           start_position=(0,0),
                                           weight_options=self.weight_options,
                                           model=model,

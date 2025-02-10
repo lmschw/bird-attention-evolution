@@ -22,7 +22,7 @@ len_weights = len(weight_options)
 
 n_agents = 7
 n_steps = 10000
-env_size = (50, 50)
+domain_size = (50, 50)
 start_position = (25, 25)
 graph_freq = 10
 visualize = True
@@ -45,13 +45,13 @@ metric = Metrics.COHESION
 
 model_params = {'num_agents': n_agents,
                 'tmax': n_steps,
-                'domain_size': env_size,
+                'domain_size': domain_size,
                 'start_position': start_position,
                 'social_weight': social_weight,
                 'weight_options': [option.value for option in weight_options],
                 'metric': metric.value}
 
-postfix = f"_test_tmax={n_steps}_n={n_agents}_bt={animal_type.name}_domain={env_size}_m={metric.value}"
+postfix = f"_test_tmax={n_steps}_n={n_agents}_bt={animal_type.name}_domain={domain_size}_m={metric.value}"
 save_path_best = f"best{postfix}.csv"
 save_path_best_normalised = f"best{postfix}_normalised.csv"
 save_path_general = f"all{postfix}"
@@ -68,7 +68,7 @@ for i in range(num_iters):
     evo = DifferentialEvolution(tmax=n_steps,
                             num_agents=n_agents,
                             animal_type=animal_type,
-                            domain_size=env_size,
+                            domain_size=domain_size,
                             weight_options=weight_options,
                             num_generations=num_gens,
                             num_iterations_per_individual=num_ind,

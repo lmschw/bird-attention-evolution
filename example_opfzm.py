@@ -41,7 +41,7 @@ nn.add(ActivationLayer(activation=snn.tanh, activation_prime=snn.tanh_prime))
 
 n_agents = 7
 n_steps = 10000
-env_size = (500, 500)
+domain_size = (500, 500)
 noise_amplitude = 0
 start_position = (250, 20)
 graph_freq = 10
@@ -67,7 +67,7 @@ landmarks = [landmark_1, landmark_2, landmark_3]
 
 sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
                       animal_type=animal_type,
-                      domain_size=env_size,
+                      domain_size=domain_size,
                       start_position=start_position,
                       use_distant_dependent_zone_factors=dist_based_zone_factors,
                       weight_options=weight_options,

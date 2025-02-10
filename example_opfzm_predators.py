@@ -41,7 +41,7 @@ nn.add(fully_connected_layer)
 nn.add(ActivationLayer(activation=snn.tanh, activation_prime=snn.tanh_prime))
 
 n_steps = 10000
-env_size = (500, 500)
+domain_size = (500, 500)
 noise_amplitude = 0.2
 graph_freq = 10
 visualize = True
@@ -78,7 +78,7 @@ sim = OrientationPerceptionFreeZoneModelSimulatorWithPredators(num_prey=num_prey
                                    animal_type_prey=animal_type_prey,
                                    num_predators=num_predators,
                                    animal_type_predator=animal_type_predator,
-                                   domain_size=env_size,
+                                   domain_size=domain_size,
                                    start_position_prey=start_position_prey,
                                    start_position_predator=start_position_predator,
                                    landmarks=landmarks,

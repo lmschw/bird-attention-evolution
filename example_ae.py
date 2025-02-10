@@ -5,7 +5,7 @@ from simulator.ae_simulator import PigeonSimulatorAe
 
 n_agents = 10
 n_steps = 10000
-env_size = (50, 50)
+domain_size = (50, 50)
 graph_freq = 10
 visualize = True
 follow = True
@@ -37,7 +37,7 @@ path_options = [{landmark_1: 'r', landmark_3: 'l', landmark_6: 'r', target: 's'}
          {landmark_3: 'r', landmark_4: 'l', landmark_5: 'l', target: 's'},
          {landmark_3: 'r', landmark_4: 'l', target: 's'}
          ]
-sim = PigeonSimulatorAe(animal_type=animal_type, num_agents=n_agents, env_size=env_size,
+sim = PigeonSimulatorAe(animal_type=animal_type, num_agents=n_agents, domain_size=domain_size,
                         start_position=start_position, 
                         model=None,
                         visualize=visualize, follow=follow, graph_freq=graph_freq)

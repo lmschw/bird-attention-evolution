@@ -44,7 +44,7 @@ def wrap_angle_to_pi(x):
 def wrap_to_2_pi(self, x):
     return (2*np.pi*x) % (2*np.pi)
 
-def compute_u_v_coordinates_for_angles(self, angles):
+def compute_u_v_coordinates_for_angles(angles):
     """
     Computes the (u,v)-coordinates based on the angle.
 
@@ -60,7 +60,7 @@ def compute_u_v_coordinates_for_angles(self, angles):
 
     return np.column_stack((U,V))
 
-def compute_angles_for_orientations(self, orientations):
+def compute_angles_for_orientations(orientations):
     """
     Computes the angle in radians based on the (u,v)-coordinates of the current orientation.
 

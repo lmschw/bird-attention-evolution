@@ -22,7 +22,7 @@ def get_relative_positions_landmarks(agents, landmarks):
 def get_relative_headings(agents):  
     return agents[:,np.newaxis,2]-agents[:,2]    
 
-def wrap_to_pi(self, x):
+def wrap_to_pi(x):
     """
     Wraps the angles to [-pi, pi]
     """

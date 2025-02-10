@@ -198,11 +198,7 @@ class PigeonSimulatorWithPredators(PigeonSimulator):
 
     def compute_delta_orientations_towards_prey(self, prey, predators):
         distances, angles = self.compute_distances_and_angles_other_type(predators, prey)
-        match_factors = np.zeros((self.num_predators, self.num_prey)) # always attracted
-        min_neighbours = np.min(distances.T, axis=1)
-        print(f"min neighbours: {min_neighbours}")
-        match_factors = np.where(distances.T == min_neighbours[:,np.newaxis], -1, match_factors)
-        #print(f"selected prey: {match_factors}")
+        match_factors = np.full((self.num_predators, self.num_prey), -1) # always attracted
         side_factors = self.compute_side_factors(angles, shape=(self.num_predators, self.num_prey))
         vision_strengths = self.compute_vision_strengths(head_orientations=predators[:,4], distances=distances.T, angles=angles, shape=(self.num_predators, self.num_prey))
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)

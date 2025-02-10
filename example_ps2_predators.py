@@ -42,7 +42,7 @@ nn.add(ActivationLayer(activation=snn.tanh, activation_prime=snn.tanh_prime))
 
 n_steps = 10000
 env_size = (500, 500)
-noise_amplitude = 0.1
+noise_amplitude = 0.2
 graph_freq = 10
 visualize = True
 visualize_head_directions = False
@@ -62,10 +62,10 @@ landmarks = []
 
 num_prey = 10
 bird_type_prey = Pigeon()
-num_predators = 2
+num_predators = 1
 bird_type_predator = Hawk()
-start_position_prey = (250, 250)
-start_position_predator = (100, 100)
+start_position_prey = (150, 150)
+start_position_predator = (200, 100)
 pack_hunting = False
 visualize_vision_fields_prey = 1
 visualize_vision_fields_predator = 1

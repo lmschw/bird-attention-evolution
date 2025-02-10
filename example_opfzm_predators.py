@@ -1,6 +1,6 @@
 import numpy as np
 
-from simulator.pigeon_simulator_2_with_predators import PigeonSimulatorWithPredators
+from simulator.orientation_perception_free_zone_model_with_predators import OrientationPerceptionFreeZoneModelSimulatorWithPredators
 from simulator.enum_weight_options import WeightOptions
 from bird_models.pigeon import Pigeon
 from bird_models.zebrafinch import Zebrafinch
@@ -61,9 +61,9 @@ landmarks = [landmark_1, landmark_2, landmark_3]
 landmarks = []
 
 num_prey = 10
-bird_type_prey = Pigeon()
+animal_type_prey = Pigeon()
 num_predators = 1
-bird_type_predator = Hawk()
+animal_type_predator = Hawk()
 start_position_prey = (150, 150)
 start_position_predator = (200, 100)
 pack_hunting = False
@@ -74,10 +74,10 @@ social_weight = 0.5
 environment_weight = 0
 other_type_weight = 0.5
 
-sim = PigeonSimulatorWithPredators(num_prey=num_prey,
-                                   bird_type_prey=bird_type_prey,
+sim = OrientationPerceptionFreeZoneModelSimulatorWithPredators(num_prey=num_prey,
+                                   animal_type_prey=animal_type_prey,
                                    num_predators=num_predators,
-                                   bird_type_predator=bird_type_predator,
+                                   animal_type_predator=animal_type_predator,
                                    domain_size=env_size,
                                    start_position_prey=start_position_prey,
                                    start_position_predator=start_position_predator,

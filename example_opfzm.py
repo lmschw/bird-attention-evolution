@@ -1,6 +1,6 @@
 import numpy as np
 
-from simulator.pigeon_simulator_2 import PigeonSimulator
+from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator
 from simulator.enum_weight_options import WeightOptions
 from bird_models.pigeon import Pigeon
 from bird_models.zebrafinch import Zebrafinch
@@ -50,7 +50,7 @@ visualize_vision_fields = 0
 visualize_head_directions = False
 follow = True
 single_speed = True
-bird_type = Pigeon()
+animal_type = Pigeon()
 start_position = (10, 10)
 
 dist_based_zone_factors = True
@@ -65,8 +65,8 @@ landmark_3 = Landmark('3', corners=[[20, 20], [20, 25], [25, 25], [25, 20]])
 
 landmarks = [landmark_1, landmark_2, landmark_3]
 
-sim = PigeonSimulator(num_agents=n_agents,
-                      bird_type=bird_type,
+sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
+                      animal_type=animal_type,
                       domain_size=env_size,
                       start_position=start_position,
                       use_distant_dependent_zone_factors=dist_based_zone_factors,

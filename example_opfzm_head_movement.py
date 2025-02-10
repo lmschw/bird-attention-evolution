@@ -1,16 +1,15 @@
 import numpy as np
 
-from simulator.pigeon_simulator_2 import PigeonSimulator
 from simulator.enum_weight_options import WeightOptions
 from bird_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 
-from genetic.genetic_algorithm_ae import DifferentialEvolution
+from genetic.genetic_algorithm_ps2 import DifferentialEvolution
 from genetic.metrics import Metrics
 
 import loggers.logger as logger
 import loggers.logger_model_params as logger_params
-import geometry.normalisation as normal
+import general.normalisation as normal
 
 weight_options = [WeightOptions.CLOSEST_DISTANCES,
                   WeightOptions.CLOSEST_BEARINGS,
@@ -19,7 +18,7 @@ weight_options = [WeightOptions.CLOSEST_DISTANCES,
                   WeightOptions.NUM_VISIBLE_AGENTS,
                   WeightOptions.PREVIOUS_HEAD_ANGLES,
                   WeightOptions.AVG_PERCEPTION_STRENGTHS]
-weight_size = len(weight_options)
+len_weights = len(weight_options)
 
 n_agents = 7
 n_steps = 10000
@@ -30,7 +29,7 @@ visualize = True
 visualize_vision_fields = 1
 follow = True
 single_speed = True
-bird_type = Pigeon()
+animal_type = Pigeon()
 start_position = (0, 0)
 
 social_weight = 1
@@ -52,7 +51,7 @@ model_params = {'num_agents': n_agents,
                 'weight_options': [option.value for option in weight_options],
                 'metric': metric.value}
 
-postfix = f"_test_ae_tmax={n_steps}_n={n_agents}_bt={bird_type.name}_domain={env_size}_m={metric.value}"
+postfix = f"_test_tmax={n_steps}_n={n_agents}_bt={animal_type.name}_domain={env_size}_m={metric.value}"
 save_path_best = f"best{postfix}.csv"
 save_path_best_normalised = f"best{postfix}_normalised.csv"
 save_path_general = f"all{postfix}"
@@ -68,7 +67,7 @@ for i in range(num_iters):
 
     evo = DifferentialEvolution(tmax=n_steps,
                             num_agents=n_agents,
-                            bird_type=bird_type,
+                            animal_type=animal_type,
                             domain_size=env_size,
                             weight_options=weight_options,
                             num_generations=num_gens,

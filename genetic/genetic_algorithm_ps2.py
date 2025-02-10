@@ -10,14 +10,14 @@ import neural_network.activation_functions as snn
 
 from genetic.metrics import Metrics
 import genetic.metrics_functions as metfunc
-import geometry.normalisation as normal
+import general.normalisation as normal
 import loggers.logger as logger
 
-from simulator.pigeon_simulator_2 import PigeonSimulator
+from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator
 from bird_models.pigeon import Pigeon
 
 class DifferentialEvolution:
-    def __init__(self, tmax, num_agents=None, bird_type=Pigeon(), domain_size=(50,50), weight_options=[],
+    def __init__(self, tmax, num_agents=None, animal_type=Pigeon(), domain_size=(50,50), weight_options=[],
                  num_generations=1000, num_iterations_per_individual=1, 
                  use_norm=True, population_size=100, bounds=[0, 1], update_to_zero_bounds=[0,0], 
                  mutation_scale_factor=1, crossover_rate=0.5, early_stopping_after_gens=None, 
@@ -50,7 +50,7 @@ class DifferentialEvolution:
 
         self.tmax = tmax
         self.num_agents = num_agents
-        self.bird_type = bird_type
+        self.animal_type = animal_type
         self.domain_size = domain_size
         self.weight_options = weight_options
 
@@ -97,8 +97,9 @@ class DifferentialEvolution:
         weights = self.update_weights(weights)
         model = self.create_neural_network(weights=weights)
         for i in range(self.num_iterations_per_individual):
-            simulator = PigeonSimulator(num_agents=self.num_agents,
-                                        bird_type=self.bird_type,
+            simulator = OrientationPerceptionFreeZoneModelSimulator(
+                                        num_agents=self.num_agents,
+                                        animal_type=self.animal_type,
                                         domain_size=self.domain_size,
                                         start_position=(0,0),
                                         social_weight=1,

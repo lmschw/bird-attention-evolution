@@ -1,6 +1,6 @@
 from bird_models.pigeon import Pigeon
 from area_models.landmark import Landmark
-from simulator.pigeon_simulator_ae import PigeonSimulatorAe
+from simulator.ae_simulator import PigeonSimulatorAe
 
 
 n_agents = 10
@@ -9,7 +9,7 @@ env_size = (50, 50)
 graph_freq = 10
 visualize = True
 follow = True
-bird_type = Pigeon()
+animal_type = Pigeon()
 start_position = (10, 10)
 target_position = (40, 40)
 target_radius = 10
@@ -37,7 +37,7 @@ path_options = [{landmark_1: 'r', landmark_3: 'l', landmark_6: 'r', target: 's'}
          {landmark_3: 'r', landmark_4: 'l', landmark_5: 'l', target: 's'},
          {landmark_3: 'r', landmark_4: 'l', target: 's'}
          ]
-sim = PigeonSimulatorAe(bird_type=bird_type, num_agents=n_agents, env_size=env_size,
+sim = PigeonSimulatorAe(animal_type=animal_type, num_agents=n_agents, env_size=env_size,
                         start_position=start_position, 
                         model=None,
                         visualize=visualize, follow=follow, graph_freq=graph_freq)

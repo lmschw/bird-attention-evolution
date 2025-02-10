@@ -1,6 +1,6 @@
 import numpy as np
-import geometry.angle_conversion as aconv
-import geometry.normalisation as normal
+import general.angle_conversion as aconv
+import general.normalisation as normal
 
 def get_landmarks(self, bird, current_landmarks):
     # TODO: determine the landmarks that are currently within the field of vision and recognised by the bird
@@ -21,12 +21,12 @@ def compute_distances_landmarks(agents, landmarks):
         distances.append(landmark_distances)   
     return np.array(distances).T
 
-def compute_perception_strengths(azimuth_angles_positions, distances, bird_type, is_conspecifics=True):
+def compute_perception_strengths(azimuth_angles_positions, distances, animal_type, is_conspecifics=True):
     azimuth_angles_positions_pi = wrap_to_pi(azimuth_angles_positions)
     overall_perception_strengths = []
     min_distances = []
     min_angles = []
-    for focus_area in bird_type.focus_areas:
+    for focus_area in animal_type.focus_areas:
         # The closer to the focus, the stronger the perception of the input
         focus = focus_area.azimuth_angle_position_horizontal
         min_angle = wrap_angle_to_pi(focus - focus_area.angle_field_horizontal)
@@ -77,21 +77,21 @@ def compute_perception_strengths(azimuth_angles_positions, distances, bird_type,
     else:
         normalised_perception_strengths = normal.normalise(np.concatenate(overall_perception_strengths, axis=0))
 
-    num_agents = int(len(normalised_perception_strengths)/len(bird_type.focus_areas))
-    normalised_reshaped_perception_strengths = [normalised_perception_strengths[:, i * num_agents: (i+1) * num_agents] for i in range(len(bird_type.focus_areas))]
+    num_agents = int(len(normalised_perception_strengths)/len(animal_type.focus_areas))
+    normalised_reshaped_perception_strengths = [normalised_perception_strengths[:, i * num_agents: (i+1) * num_agents] for i in range(len(animal_type.focus_areas))]
 
-    normalised_reshaped_perception_strengths = np.sum(normalised_perception_strengths.reshape((1, len(azimuth_angles_positions),len(azimuth_angles_positions[0]),len(bird_type.focus_areas))), axis=3)
+    normalised_reshaped_perception_strengths = np.sum(normalised_perception_strengths.reshape((1, len(azimuth_angles_positions),len(azimuth_angles_positions[0]),len(animal_type.focus_areas))), axis=3)
     return normalised_reshaped_perception_strengths, (min_dists_final, min_angles_final, min_dist_idx_basic)
 
-def compute_perception_strengths_conspecifics(agents, bird_type):
+def compute_perception_strengths_conspecifics(agents, animal_type):
     azimuth_angles_positions = aconv.get_relative_positions(agents=agents)
     distances = compute_distances(agents=agents)
-    return compute_perception_strengths(azimuth_angles_positions=azimuth_angles_positions, distances=distances, bird_type=bird_type)
+    return compute_perception_strengths(azimuth_angles_positions=azimuth_angles_positions, distances=distances, animal_type=animal_type)
 
-def compute_perception_strengths_landmarks(agents, landmarks, bird_type):
+def compute_perception_strengths_landmarks(agents, landmarks, animal_type):
     azimuth_angles_positions = aconv.get_relative_positions_landmarks(agents=agents, landmarks=landmarks)
     distances = compute_distances_landmarks(agents=agents, landmarks=landmarks)
-    return compute_perception_strengths(azimuth_angles_positions=azimuth_angles_positions, distances=distances, bird_type=bird_type, is_conspecifics=False)
+    return compute_perception_strengths(azimuth_angles_positions=azimuth_angles_positions, distances=distances, animal_type=animal_type, is_conspecifics=False)
 
 def wrap_to_pi(arr):
     """

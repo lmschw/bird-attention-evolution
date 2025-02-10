@@ -33,10 +33,10 @@ DES_DIST = SIGMA * 2**(1/2)
 PERCEPTION_STRENGTH_MODIFIER = 5
 
 class PigeonSimulatorAe:
-    def __init__(self, bird_type, num_agents, env_size, start_position,
+    def __init__(self, animal_type, num_agents, env_size, start_position,
                  weight_options=[], model=None,
                  visualize=True, visualize_head_direction=True, follow=True, graph_freq=5):
-        self.bird_type = bird_type
+        self.animal_type = animal_type
         self.num_agents = num_agents
         self.env_size = env_size
         self.start_position = start_position
@@ -159,7 +159,7 @@ class PigeonSimulatorAe:
         x_diffs = xx1 - xx2
         y_diffs = yy1 - yy2
         distances = np.sqrt(np.multiply(x_diffs, x_diffs) + np.multiply(y_diffs, y_diffs))  
-        distances[distances > self.bird_type.sensing_range] = np.inf
+        distances[distances > self.animal_type.sensing_range] = np.inf
         distances[distances == 0.0] = np.inf
         #print(f"Dists: {distances}")
         
@@ -221,7 +221,7 @@ class PigeonSimulatorAe:
 
         """  
         dists_conspecifics, angles_conspecifics = self.compute_distances_and_angles()
-        perception_strengths_conspecifics, min_agent = pstrength.compute_perception_strengths(angles_conspecifics, dists_conspecifics, self.bird_type)
+        perception_strengths_conspecifics, min_agent = pstrength.compute_perception_strengths(angles_conspecifics, dists_conspecifics, self.animal_type)
 
 
         p_x, p_y = self.get_pi_elements(distances_conspecifics=dists_conspecifics,
@@ -255,7 +255,7 @@ class PigeonSimulatorAe:
     def update_head_orientations(self, agents):
         if self.model:
             distances, angles = self.compute_distances_and_angles()
-            perception_strengths_conspecifics, min_agent = pstrength.compute_perception_strengths(angles, distances, self.bird_type)
+            perception_strengths_conspecifics, min_agent = pstrength.compute_perception_strengths(angles, distances, self.animal_type)
 
             inputs = np.array([wo.get_input_value_for_weight_option(weight_option=option, bearings=agents[:,3], distances=distances, angles=angles, perception_strengths=perception_strengths_conspecifics) for option in self.weight_options])
             inputs = np.where(inputs == np.inf, wo.MAX_INPUT, inputs)

@@ -1,13 +1,13 @@
 import numpy as np
 
-import geometry.normalisation as normal
+import general.normalisation as normal
 
-def compute_perception_strengths(azimuth_angles_positions, distances, bird_type, is_conspecifics=True):
+def compute_perception_strengths(azimuth_angles_positions, distances, animal_type, is_conspecifics=True):
     azimuth_angles_positions_pi = wrap_to_pi(azimuth_angles_positions)
     overall_perception_strengths = []
     min_distances = []
     min_angles = []
-    for focus_area in bird_type.focus_areas:
+    for focus_area in animal_type.focus_areas:
         # The closer to the focus, the stronger the perception of the input
         focus = focus_area.azimuth_angle_position_horizontal
         min_angle = wrap_angle_to_pi(focus - focus_area.angle_field_horizontal)
@@ -55,7 +55,7 @@ def compute_perception_strengths(azimuth_angles_positions, distances, bird_type,
 
     normalised_perception_strengths = normal.normalise(np.concatenate(overall_perception_strengths, axis=1))
 
-    normalised_reshaped_perception_strengths = np.sum(normalised_perception_strengths.reshape((1, len(azimuth_angles_positions),len(azimuth_angles_positions[0]),len(bird_type.focus_areas))), axis=3)
+    normalised_reshaped_perception_strengths = np.sum(normalised_perception_strengths.reshape((1, len(azimuth_angles_positions),len(azimuth_angles_positions[0]),len(animal_type.focus_areas))), axis=3)
     normalised_reshaped_perception_strengths = normalised_reshaped_perception_strengths.reshape(distances.shape)
     return normalised_reshaped_perception_strengths, (min_dists_final, min_angles_final, min_dist_idx_basic)
 

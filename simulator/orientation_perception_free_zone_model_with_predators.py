@@ -6,20 +6,20 @@ from shapely import Point
 
 from bird_models.pigeon import Pigeon
 from bird_models.focus_area import FocusArea
-import geometry.normalisation as normal
+import general.normalisation as normal
 import simulator.weight_options as wo
-from simulator.pigeon_simulator_2 import PigeonSimulator
+from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator
 
 DIST_MOD = 0.001
 
-class PigeonSimulatorWithPredators(PigeonSimulator):
-    def __init__(self, num_prey, bird_type_prey, num_predators, bird_type_predator, domain_size, start_position_prey, 
+class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPerceptionFreeZoneModelSimulator):
+    def __init__(self, num_prey, animal_type_prey, num_predators, animal_type_predator, domain_size, start_position_prey, 
                  start_position_predator, pack_hunting=False, landmarks=[], noise_amplitude=0, social_weight=1, environment_weight=1,
                  other_type_weight=1, limit_turns=True, use_distant_dependent_zone_factors=True, weight_options=[], 
                  model=None, single_speed=True, visualize=True, visualize_vision_fields_prey=0, 
                  visualize_vision_fields_predator=0, visualize_head_direction=True, follow=False, graph_freq=5):
         super().__init__(num_agents=num_prey,
-                         bird_type=bird_type_prey,
+                         animal_type=animal_type_prey,
                          domain_size=domain_size,
                          start_position=start_position_prey,
                          landmarks=landmarks,
@@ -38,9 +38,9 @@ class PigeonSimulatorWithPredators(PigeonSimulator):
                          graph_freq=graph_freq)
         
         self.num_prey = num_prey
-        self.bird_type_prey = bird_type_prey
+        self.animal_type_prey = animal_type_prey
         self.num_predators = num_predators
-        self.bird_type_predator = bird_type_predator
+        self.animal_type_predator = animal_type_predator
         self.start_position_prey = start_position_prey
         self.start_position_predator = start_position_predator
         self.pack_hunting = pack_hunting
@@ -68,21 +68,21 @@ class PigeonSimulatorWithPredators(PigeonSimulator):
         return prey, predators
     
     def init_agents(self):
-        prey, self.colours_prey = self.init_agents_for_agent_type(num_agents=self.num_prey, 
-                                               bird_type=self.bird_type_prey, 
+        prey, self.colours_prey = self.init_agents_for_animal_type(num_agents=self.num_prey, 
+                                               animal_type=self.animal_type_prey, 
                                                start_position=self.start_position_prey,
                                                visualize_vision_fields=self.visualize_vision_fields_prey)
-        predators, self.colours_predator = self.init_agents_for_agent_type(num_agents=self.num_predators, 
-                                               bird_type=self.bird_type_predator, 
+        predators, self.colours_predator = self.init_agents_for_animal_type(num_agents=self.num_predators, 
+                                               animal_type=self.animal_type_predator, 
                                                start_position=self.start_position_predator,
                                                visualize_vision_fields=self.visualize_vision_fields_predator)
         return prey, predators
 
-    def init_agents_for_agent_type(self, num_agents, bird_type, start_position, visualize_vision_fields):
+    def init_agents_for_animal_type(self, num_agents, animal_type, start_position, visualize_vision_fields):
         rng = np.random
         n_points_x = int(np.ceil(np.sqrt(num_agents)))
         n_points_y = int(np.ceil(np.sqrt(num_agents)))
-        spacing = np.average(bird_type.preferred_distance_left_right)
+        spacing = np.average(animal_type.preferred_distance_left_right)
         init_x = 0
         init_y = 0
 
@@ -100,9 +100,9 @@ class PigeonSimulatorWithPredators(PigeonSimulator):
         pos_hs = pos_hs[indices]
 
         if self.single_speed:
-            speeds = np.full(num_agents, bird_type.speeds[1])
+            speeds = np.full(num_agents, animal_type.speeds[1])
         else:
-            speeds = np.random.uniform(bird_type.speeds[0], bird_type.speeds[2], num_agents)
+            speeds = np.random.uniform(animal_type.speeds[0], animal_type.speeds[2], num_agents)
 
         head_angles = np.zeros(num_agents)
 
@@ -112,9 +112,9 @@ class PigeonSimulatorWithPredators(PigeonSimulator):
 
         return np.column_stack([pos_xs, pos_ys, pos_hs, speeds, head_angles]), colours
     
-    def graph_vision_fields(self, agents, bird_type, visualize_vision_fields, colours):
+    def graph_vision_fields(self, agents, animal_type, visualize_vision_fields, colours):
         for i in range(visualize_vision_fields):
-            for focus_area in bird_type.focus_areas:
+            for focus_area in animal_type.focus_areas:
                 focus_angle = agents[i,2] + agents[i,4] + focus_area.azimuth_angle_position_horizontal + 2 * np.pi
                 start_angle = np.rad2deg(focus_angle - focus_area.angle_field_horizontal) 
                 end_angle = np.rad2deg(focus_angle + focus_area.angle_field_horizontal) 
@@ -148,8 +148,8 @@ class PigeonSimulatorWithPredators(PigeonSimulator):
         """  
         self.ax.clear()
 
-        self.graph_vision_fields(prey, self.bird_type_prey, self.visualize_vision_fields_prey, self.colours_prey)
-        self.graph_vision_fields(predators, self.bird_type_predator, self.visualize_vision_fields_predator, self.colours_predator)
+        self.graph_vision_fields(prey, self.animal_type_prey, self.visualize_vision_fields_prey, self.colours_prey)
+        self.graph_vision_fields(predators, self.animal_type_predator, self.visualize_vision_fields_predator, self.colours_predator)
 
         if self.environment_weight > 0:
             # Draw landmarks
@@ -206,10 +206,10 @@ class PigeonSimulatorWithPredators(PigeonSimulator):
     def compute_delta_orientations(self, prey, predators, is_prey):
         if is_prey:
             agents = prey
-            bird_type = self.bird_type_prey
+            animal_type = self.animal_type_prey
         else:
             agents = predators
-            bird_type = self.bird_type_predator
+            animal_type = self.animal_type_predator
 
         delta_orientations_conspecifics, distances, angles, vision_strengths = self.compute_delta_orientations_conspecifics(agents=agents)
         if len(self.landmarks) > 0 and self.environment_weight != 0:
@@ -231,8 +231,8 @@ class PigeonSimulatorWithPredators(PigeonSimulator):
 
         #print(delta_orientations_landmarks)
         delta_orientations = social_weight * delta_orientations_conspecifics + self.environment_weight * delta_orientations_landmarks + self.other_type_weight * delta_orientations_other_type
-        delta_orientations = np.where((delta_orientations > bird_type.max_turn_angle), bird_type.max_turn_angle, delta_orientations)
-        delta_orientations = np.where((delta_orientations < -bird_type.max_turn_angle), -bird_type.max_turn_angle, delta_orientations)
+        delta_orientations = np.where((delta_orientations > animal_type.max_turn_angle), animal_type.max_turn_angle, delta_orientations)
+        delta_orientations = np.where((delta_orientations < -animal_type.max_turn_angle), -animal_type.max_turn_angle, delta_orientations)
         return delta_orientations, distances, angles, vision_strengths
     
     def compute_new_orientations_for_type(self, prey, predators, is_prey):

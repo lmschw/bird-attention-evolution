@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from area_models.landmark import Landmark
 from bird_models.pigeon import Pigeon
 import vision.environment_vision as env_vision
-import geometry.normalisation as gnormal
+import general.normalisation as gnormal
 
 """
 I am a pigeon. I am part of a flock. I am flying home.
@@ -24,13 +24,13 @@ class PigeonSimulator:
         self.start_position = start_position
         self.target_position = target_position
         self.neural_network = neural_network
-        self.bird_type = Pigeon()
+        self.animal_type = Pigeon()
 
     def init_swarm(self):
         rng = np.random
         n_points_x = self.n
         n_points_y = self.n
-        spacing = self.bird_type.wingspan
+        spacing = self.animal_type.wingspan
         init_x = 0
         init_y = 0
 
@@ -49,7 +49,7 @@ class PigeonSimulator:
         hierarchy = np.zeros((num_agents, 1))
         target_heading = np.zeros((num_agents, 1))
         head_heading = np.zeros((num_agents, 1))
-        speeds = np.full((num_agents,1), self.bird_type.average_speed)
+        speeds = np.full((num_agents,1), self.animal_type.average_speed)
 
         return np.column_stack([pos_xs, pos_ys, pos_hs, hierarchy, target_heading, head_heading, speeds])
     
@@ -72,13 +72,13 @@ class PigeonSimulator:
     
     def compute_comfortable_distance_matches(self, agents, perception_strengths):
         distances = env_vision.compute_distances(agents=agents)
-        in_comfortable_distance_min = distances >= self.bird_type.preferred_distance_left_right[0]
-        in_comfortable_distance_max = distances <= self.bird_type.preferred_distance_left_right[1]
+        in_comfortable_distance_min = distances >= self.animal_type.preferred_distance_left_right[0]
+        in_comfortable_distance_max = distances <= self.animal_type.preferred_distance_left_right[1]
         in_comfortable_distance = np.where(((in_comfortable_distance_min & in_comfortable_distance_max)), True, False)
         return np.sum(perception_strengths*in_comfortable_distance)
 
     def get_conspecific_alignment_cohesion(self, agents):
-        perception_strengths, min_conspecific = env_vision.compute_perception_strengths_conspecifics(agents=agents, bird_type=self.bird_type)
+        perception_strengths, min_conspecific = env_vision.compute_perception_strengths_conspecifics(agents=agents, animal_type=self.animal_type)
         local_orders = []
         comfortable_distance_matches = []
         for p_strength in perception_strengths:
@@ -87,7 +87,7 @@ class PigeonSimulator:
         return perception_strengths, np.average(local_orders), np.average(comfortable_distance_matches), min_conspecific
 
     def get_landmark_alignment(self, agents):
-        perception_strengths, min_landmark = env_vision.compute_perception_strengths_landmarks(agents=agents, landmarks=self.area.landmarks, bird_type=self.bird_type)
+        perception_strengths, min_landmark = env_vision.compute_perception_strengths_landmarks(agents=agents, landmarks=self.area.landmarks, animal_type=self.animal_type)
         min_dists_final, min_angles_final, min_dist_idx = min_landmark
         alignment_angles = []
         for i in range(len(agents)):

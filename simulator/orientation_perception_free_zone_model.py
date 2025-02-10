@@ -6,19 +6,19 @@ from shapely import Point
 
 from bird_models.pigeon import Pigeon
 from bird_models.focus_area import FocusArea
-import geometry.normalisation as normal
+import general.normalisation as normal
 import simulator.weight_options as wo
 
 DIST_MOD = 0.001
 
-class PigeonSimulator:
-    def __init__(self, num_agents, bird_type, domain_size, start_position, landmarks=[],
+class OrientationPerceptionFreeZoneModelSimulator:
+    def __init__(self, num_agents, animal_type, domain_size, start_position, landmarks=[],
                  noise_amplitude=0, social_weight=1, environment_weight=1, limit_turns=True, 
                  use_distant_dependent_zone_factors=True, weight_options=[], model=None, 
                  single_speed=True, visualize=True, visualize_vision_fields=0, 
                  visualize_head_direction=True, follow=False, graph_freq=5):
         self.num_agents = num_agents
-        self.bird_type = bird_type
+        self.animal_type = animal_type
         self.domain_size = domain_size
         self.start_position = start_position
         self.noise_amplitude = noise_amplitude
@@ -58,7 +58,7 @@ class PigeonSimulator:
         rng = np.random
         n_points_x = int(np.ceil(np.sqrt(self.num_agents)))
         n_points_y = int(np.ceil(np.sqrt(self.num_agents)))
-        spacing = np.average(self.bird_type.preferred_distance_left_right)
+        spacing = np.average(self.animal_type.preferred_distance_left_right)
         init_x = 0
         init_y = 0
 
@@ -79,9 +79,9 @@ class PigeonSimulator:
         self.num_agents = num_agents
 
         if self.single_speed:
-            speeds = np.full(self.num_agents, self.bird_type.speeds[1])
+            speeds = np.full(self.num_agents, self.animal_type.speeds[1])
         else:
-            speeds = np.random.uniform(self.bird_type.speeds[0], self.bird_type.speeds[2], self.num_agents)
+            speeds = np.random.uniform(self.animal_type.speeds[0], self.animal_type.speeds[2], self.num_agents)
 
         head_angles = np.zeros(self.num_agents)
 
@@ -99,7 +99,7 @@ class PigeonSimulator:
         self.ax.clear()
 
         for i in range(self.visualize_vision_fields):
-            for focus_area in self.bird_type.focus_areas:
+            for focus_area in self.animal_type.focus_areas:
                 focus_angle = agents[i,2] + agents[i,4] + focus_area.azimuth_angle_position_horizontal + 2 * np.pi
                 start_angle = np.rad2deg(focus_angle - focus_area.angle_field_horizontal) 
                 end_angle = np.rad2deg(focus_angle + focus_area.angle_field_horizontal) 
@@ -162,7 +162,7 @@ class PigeonSimulator:
         x_diffs = xx1 - xx2
         y_diffs = yy1 - yy2
         distances = np.sqrt(np.multiply(x_diffs, x_diffs) + np.multiply(y_diffs, y_diffs))  
-        distances[distances > self.bird_type.sensing_range] = np.inf
+        distances[distances > self.animal_type.sensing_range] = np.inf
         distances[distances == 0.0] = np.inf
         #print(f"Dists: {distances}")
         
@@ -216,7 +216,7 @@ class PigeonSimulator:
         y_diffs = nearest_points[:,:,1] - pos_ys[np.newaxis, :]
         y_diffs = y_diffs.T
         distances = np.sqrt(np.multiply(x_diffs, x_diffs) + np.multiply(y_diffs, y_diffs))  
-        distances[distances > self.bird_type.sensing_range] = np.inf
+        distances[distances > self.animal_type.sensing_range] = np.inf
         distances[distances == 0.0] = np.inf
         #print(f"Dists: {distances}")
     
@@ -227,8 +227,8 @@ class PigeonSimulator:
         return distances, angles
     
     def compute_conspecific_match_factors(self, distances):
-        repulsion_zone = distances < self.bird_type.preferred_distance_left_right[0]
-        attraction_zone = distances > self.bird_type.preferred_distance_left_right[1]
+        repulsion_zone = distances < self.animal_type.preferred_distance_left_right[0]
+        attraction_zone = distances > self.animal_type.preferred_distance_left_right[1]
         match_factors = np.zeros((self.num_agents, self.num_agents))
         if self.use_distant_dependent_zone_factors:
             rep_factors = -(1/distances) # stronger repulsion the closer the other is
@@ -239,10 +239,16 @@ class PigeonSimulator:
 
         match_factors = np.where(repulsion_zone, rep_factors, match_factors)
         match_factors = np.where(attraction_zone, att_factors, match_factors)
+
+
+        min_neighbours = np.min(distances.T, axis=1)
+        print(f"min neighbours: {min_neighbours}")
+        match_factors = np.where(distances.T == min_neighbours[:,np.newaxis], 0, match_factors)
+        #print(f"selected prey: {match_factors}")
         return match_factors
     
     def compute_landmark_match_factors(self, distances):
-        repulsion_zone = distances < self.bird_type.preferred_distance_left_right[0]
+        repulsion_zone = distances < self.animal_type.preferred_distance_left_right[0]
         match_factors = np.zeros((self.num_agents, len(self.landmarks)))
         if self.use_distant_dependent_zone_factors:
             rep_factors = -(1/distances) # stronger repulsion the closer the other is
@@ -259,12 +265,12 @@ class PigeonSimulator:
         side_factors = np.where(rights, 1, side_factors)   
         return side_factors
     
-    def compute_vision_strengths(self, head_orientations, distances, angles, shape, bird_type=None):
-        if bird_type == None:
-            bird_type = self.bird_type
-        dist_absmax = bird_type.sensing_range
+    def compute_vision_strengths(self, head_orientations, distances, angles, shape, animal_type=None):
+        if animal_type == None:
+            animal_type = self.animal_type
+        dist_absmax = animal_type.sensing_range
         vision_strengths_overall = []
-        for focus_area in self.bird_type.focus_areas:
+        for focus_area in self.animal_type.focus_areas:
             dist_min = focus_area.comfortable_distance[0]
             dist_max = focus_area.comfortable_distance[1]
 
@@ -315,8 +321,8 @@ class PigeonSimulator:
             delta_orientations_landmarks = 0
         #print(delta_orientations_landmarks)
         delta_orientations = self.social_weight * delta_orientations_conspecifics + self.environment_weight * delta_orientations_landmarks
-        delta_orientations = np.where((delta_orientations > self.bird_type.max_turn_angle), self.bird_type.max_turn_angle, delta_orientations)
-        delta_orientations = np.where((delta_orientations < -self.bird_type.max_turn_angle), -self.bird_type.max_turn_angle, delta_orientations)
+        delta_orientations = np.where((delta_orientations > self.animal_type.max_turn_angle), self.animal_type.max_turn_angle, delta_orientations)
+        delta_orientations = np.where((delta_orientations < -self.animal_type.max_turn_angle), -self.animal_type.max_turn_angle, delta_orientations)
         return delta_orientations, distances, angles, vision_strengths
 
     def compute_new_orientations(self, agents):

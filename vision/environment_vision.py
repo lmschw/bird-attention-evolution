@@ -3,16 +3,22 @@ import general.angle_conversion as aconv
 import general.normalisation as normal
 import general.angle_conversion as ac
 
-def get_landmarks(self, bird, current_landmarks):
-    # TODO: determine the landmarks that are currently within the field of vision and recognised by the bird
-    pass
+"""
+Contains methods pertaining to the visual information coming from the environment.
+"""
 
 def compute_distances(agents):
+    """
+    Computes the distances between all agents.
+    """
     positions = np.column_stack((agents[:,0], agents[:,1]))
     rij = positions[:,np.newaxis,:]-positions   
     return np.sum(rij**2,axis=2)
 
 def compute_distances_landmarks(agents, landmarks):
+    """
+    Computes the distance of every agent to every landmark.
+    """
     positions = np.column_stack((agents[:,0], agents[:,1]))
     distances = []
     for agent_idx in range(len(agents)):
@@ -23,6 +29,9 @@ def compute_distances_landmarks(agents, landmarks):
     return np.array(distances).T
 
 def compute_perception_strengths(azimuth_angles_positions, distances, animal_type, is_conspecifics=True):
+    """
+    Computes the perception strengths for every agent to every other entity based on the distances, bearings and animal_type provided.
+    """
     azimuth_angles_positions_pi = ac.wrap_to_pi(azimuth_angles_positions)
     overall_perception_strengths = []
     min_distances = []
@@ -85,11 +94,17 @@ def compute_perception_strengths(azimuth_angles_positions, distances, animal_typ
     return normalised_reshaped_perception_strengths, (min_dists_final, min_angles_final, min_dist_idx_basic)
 
 def compute_perception_strengths_conspecifics(agents, animal_type):
+    """
+    Computes the perception strengths for all pairs of conspecifics.
+    """
     azimuth_angles_positions = aconv.get_relative_positions(agents=agents)
     distances = compute_distances(agents=agents)
     return compute_perception_strengths(azimuth_angles_positions=azimuth_angles_positions, distances=distances, animal_type=animal_type)
 
 def compute_perception_strengths_landmarks(agents, landmarks, animal_type):
+    """
+    Computes the perception strengths for all agent-landmark combinations.
+    """
     azimuth_angles_positions = aconv.get_relative_positions_landmarks(agents=agents, landmarks=landmarks)
     distances = compute_distances_landmarks(agents=agents, landmarks=landmarks)
     return compute_perception_strengths(azimuth_angles_positions=azimuth_angles_positions, distances=distances, animal_type=animal_type, is_conspecifics=False)

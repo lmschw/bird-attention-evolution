@@ -1,6 +1,10 @@
 import numpy as np
 from simulator.enum_weight_options import WeightOptions
 
+"""
+Describes the type of input data to the neural network updating the head direction.
+"""
+
 MAX_INPUT = 1_000_000
 
 def get_input_value_for_weight_option(weight_option, bearings, distances, angles, perception_strengths):

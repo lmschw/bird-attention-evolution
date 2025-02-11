@@ -10,6 +10,10 @@ import general.normalisation as normal
 import general.angle_conversion as ac
 import simulator.weight_options as wo
 
+"""
+Implementation of the orientation-perception-free zone model with landmarks.
+"""
+
 DIST_MOD = 0.001
 
 class OrientationPerceptionFreeZoneModelSimulator:
@@ -18,6 +22,27 @@ class OrientationPerceptionFreeZoneModelSimulator:
                  use_distant_dependent_zone_factors=True, weight_options=[], model=None, 
                  single_speed=True, visualize=True, visualize_vision_fields=0, 
                  visualize_head_direction=True, follow=False, graph_freq=5):
+        """
+        Params:
+            - num_agents (int): the number of animals within the domain
+            - animal_type (Animal): the type of animal 
+            - domain_size (tuple of ints): the size of the domain, though it is not strictly bounded and used for display only
+            - start_position (tuple of 2 ints): the position around which the agents are initially distributed
+            - landmarks (list of Landmark) [optional, default=[]]: the landmarks within the domain
+            - noise_amplitude (float) [optional, default=0]: the amount of noise that is added to the orientation updates
+            - social_weight (float) [optional, default=1]: how much the agents are influenced by the social information
+            - environment_weight (float) [optional, default=1]: how much the agents are influenced by the landmark information
+            - limit_turns (boolean) [optional, default=True]: whether the turns can be greater than the max turn angle defined for the animal type
+            - use_distant_dependent_zone_factors (boolean) [optional, default=True]: whether the influence of neighbours should be dependent on their exact distance or only on the zone they're in
+            - weight_options (list of WeightOption) [optional, default=[]]: which information is fed as input to the model
+            - model (NeuralNetwork) [optional, default=None]: the neural network model that determines updates to the head orientations
+            - single_speed (boolean) [optional, default=True]: whether the agents should have the same or slightly different speeds
+            - visualize (boolean) [optional, default=True]: whether the simulation should be visualized immediately
+            - visualize_vision_fields (int) [optional, default=0]: the field of vision of how many agents should be visualised. These will be superimposed if necessary
+            - visualize_head_direction (boolean) [optional, default=True]: whether an additional arrow should point in the direction in whichere the head is pointing
+            - follow (boolean) [optional, default=True]: whether the visualization should follow the centroid of the swarm or whether it should show the whole domain
+            - graph_freq (int) [optional, default=5]: how often the visualization should be updated
+        """
         self.num_agents = num_agents
         self.animal_type = animal_type
         self.domain_size = domain_size
@@ -39,6 +64,9 @@ class OrientationPerceptionFreeZoneModelSimulator:
         self.centroid_trajectory = []
 
     def initialize(self):
+        """
+        Initialises the agents, domain and field of vision.
+        """
         agents = self.init_agents()
 
         # Setup graph
@@ -54,8 +82,10 @@ class OrientationPerceptionFreeZoneModelSimulator:
 
         return agents
 
-
     def init_agents(self):
+        """
+        Initialises the agents (positions and orientations).
+        """
         rng = np.random
         n_points_x = int(np.ceil(np.sqrt(self.num_agents)))
         n_points_y = int(np.ceil(np.sqrt(self.num_agents)))
@@ -86,16 +116,13 @@ class OrientationPerceptionFreeZoneModelSimulator:
 
         head_angles = np.zeros(self.num_agents)
 
-        #print(f"Head angles: {head_angles}")
-
         self.colours = np.random.uniform(0, 1, (self.visualize_vision_fields, 3))
 
         return np.column_stack([pos_xs, pos_ys, pos_hs, speeds, head_angles])
 
     def graph_agents(self, agents):
         """
-        Visualizes the state of the simulation with matplotlib
-
+        Redraws the visualization for the current positions and orientations of the agents.
         """  
         self.ax.clear()
 
@@ -151,6 +178,9 @@ class OrientationPerceptionFreeZoneModelSimulator:
         plt.pause(0.000001)
 
     def move_heads(self, agents, distances, angles, perception_strengths_conspecifics):
+        """
+        Moves the heads of all agents based on the output of the neural network model.
+        """
         inputs = np.array([wo.get_input_value_for_weight_option(weight_option=option, bearings=agents[:,4], distances=distances, angles=angles, perception_strengths=perception_strengths_conspecifics) for option in self.weight_options])
         inputs = np.where(inputs == np.inf, wo.MAX_INPUT, inputs)
         new_head_angles = []
@@ -159,28 +189,25 @@ class OrientationPerceptionFreeZoneModelSimulator:
         return new_head_angles
 
     def compute_distances_and_angles(self, headings, xx1, xx2, yy1, yy2, transpose_for_angles=False):
-        # Calculate distances
+        """
+        Computes the distances and bearings between the agents.
+        """
         x_diffs = xx1 - xx2
         y_diffs = yy1 - yy2
         distances = np.sqrt(np.multiply(x_diffs, x_diffs) + np.multiply(y_diffs, y_diffs))  
         distances[distances > self.animal_type.sensing_range] = np.inf
         distances[distances == 0.0] = np.inf
-        #print(f"Dists: {distances}")
-        
 
-        # Calculate angles in the local frame of reference
         if transpose_for_angles:
             angles = ac.wrap_to_pi(np.arctan2(y_diffs.T, x_diffs.T) - headings[:, np.newaxis])
         else:
             angles = ac.wrap_to_pi(np.arctan2(y_diffs, x_diffs) - headings[:, np.newaxis])
-        #print(f"Angles: {angles}")
 
         return distances, angles
 
     def compute_distances_and_angles_conspecifics(self, agents):
         """
-        Computes and returns the distances and its x and y elements for all pairs of agents
-
+        Computes the distances and bearings between the conspecifics.
         """
         # Build meshgrid 
         pos_xs = agents[:, 0]
@@ -191,6 +218,9 @@ class OrientationPerceptionFreeZoneModelSimulator:
         return self.compute_distances_and_angles(headings=agents[:,2], xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2)
     
     def compute_nearest_points_to_landmarks(self, agents):
+        """
+        Computes the nearest point on every landmark to every agent.
+        """
         positions = np.column_stack((agents[:,0], agents[:,1]))
         nearest_points = []
         for landmark in self.landmarks:
@@ -203,15 +233,12 @@ class OrientationPerceptionFreeZoneModelSimulator:
     
     def compute_distances_and_angles_landmarks(self, agents):
         """
-        Computes and returns the distances and its x and y elements for all pairs of agents
-
+        Computes the distances and bearings between the agents and the landmarks.
         """
         nearest_points = np.array(self.compute_nearest_points_to_landmarks(agents=agents))
-        # Build meshgrid 
         pos_xs = agents[:, 0]
         pos_ys = agents[:, 1]
 
-        # Calculate distances
         x_diffs = nearest_points[:,:,0] - pos_xs[np.newaxis, :]
         x_diffs = x_diffs.T
         y_diffs = nearest_points[:,:,1] - pos_ys[np.newaxis, :]
@@ -219,15 +246,16 @@ class OrientationPerceptionFreeZoneModelSimulator:
         distances = np.sqrt(np.multiply(x_diffs, x_diffs) + np.multiply(y_diffs, y_diffs))  
         distances[distances > self.animal_type.sensing_range] = np.inf
         distances[distances == 0.0] = np.inf
-        #print(f"Dists: {distances}")
     
         headings = agents[:,2]
         angles = ac.wrap_to_pi(np.arctan2(y_diffs, x_diffs) - headings[:, np.newaxis])
-        #print(f"Angles: {angles}")
 
         return distances, angles
     
     def compute_conspecific_match_factors(self, distances):
+        """
+        Computes whether the other agents are too close or too far away
+        """
         repulsion_zone = distances < self.animal_type.preferred_distance_left_right[0]
         attraction_zone = distances > self.animal_type.preferred_distance_left_right[1]
         match_factors = np.zeros((self.num_agents, self.num_agents))
@@ -241,14 +269,12 @@ class OrientationPerceptionFreeZoneModelSimulator:
         match_factors = np.where(repulsion_zone, rep_factors, match_factors)
         match_factors = np.where(attraction_zone, att_factors, match_factors)
 
-
-        min_neighbours = np.min(distances.T, axis=1)
-        print(f"min neighbours: {min_neighbours}")
-        match_factors = np.where(distances.T == min_neighbours[:,np.newaxis], 0, match_factors)
-        #print(f"selected prey: {match_factors}")
         return match_factors
     
     def compute_landmark_match_factors(self, distances):
+        """
+        Computes whether the landmarks are too close
+        """
         repulsion_zone = distances < self.animal_type.preferred_distance_left_right[0]
         match_factors = np.zeros((self.num_agents, len(self.landmarks)))
         if self.use_distant_dependent_zone_factors:
@@ -259,6 +285,9 @@ class OrientationPerceptionFreeZoneModelSimulator:
         return match_factors
     
     def compute_side_factors(self, angles, shape):
+        """
+        Computes whether the other agents or landmarks are to the left, right or straight ahead.
+        """
         lefts = angles < 0
         rights = angles > 0
         side_factors = np.zeros(shape=shape)
@@ -267,6 +296,11 @@ class OrientationPerceptionFreeZoneModelSimulator:
         return side_factors
     
     def compute_vision_strengths(self, head_orientations, distances, angles, shape, animal_type=None):
+        """
+        Computes the vision strengths for every other agent or landmark. Every focus area of the animal_type
+        is considered and the distance to the foveal projection is used to determine how well/strongly the
+        entity is perceived. If an entity is perceived by multiple focus areas, their average strength is used.
+        """
         if animal_type == None:
             animal_type = self.animal_type
         dist_absmax = animal_type.sensing_range
@@ -298,6 +332,9 @@ class OrientationPerceptionFreeZoneModelSimulator:
         return vision_strengths_overall
 
     def compute_delta_orientations_conspecifics(self, agents):
+        """
+        Computes the orientation difference that is caused by the conspecifics.
+        """
         distances, angles = self.compute_distances_and_angles_conspecifics(agents)
         match_factors = self.compute_conspecific_match_factors(distances=distances)
         side_factors = self.compute_side_factors(angles, shape=(self.num_agents, self.num_agents))
@@ -305,6 +342,9 @@ class OrientationPerceptionFreeZoneModelSimulator:
         return np.sum(match_factors * side_factors * vision_strengths, axis=1), distances, angles, vision_strengths
     
     def compute_delta_orientations_landmarks(self, agents):
+        """
+        Computes the orientation difference that is caused by the landmarks.
+        """
         distances, angles = self.compute_distances_and_angles_landmarks(agents=agents)
         match_factors = self.compute_landmark_match_factors(distances=distances)
         side_factors = self.compute_side_factors(angles, shape=(self.num_agents, len(self.landmarks)))
@@ -312,9 +352,15 @@ class OrientationPerceptionFreeZoneModelSimulator:
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
     
     def generate_noise(self):
+        """
+        Generates noise.
+        """
         return np.random.normal(scale=self.noise_amplitude, size=self.num_agents)
     
     def compute_delta_orientations(self, agents):
+        """
+        Computes the orientation difference for all agents.
+        """
         delta_orientations_conspecifics, distances, angles, vision_strengths = self.compute_delta_orientations_conspecifics(agents=agents)
         if len(self.landmarks) > 0:
             delta_orientations_landmarks = self.compute_delta_orientations_landmarks(agents=agents)
@@ -327,6 +373,9 @@ class OrientationPerceptionFreeZoneModelSimulator:
         return delta_orientations, distances, angles, vision_strengths
 
     def compute_new_orientations(self, agents):
+        """
+        Computes the new orientations and head orientations for all agents.
+        """
         delta_orientations, distances, angles, vision_strengths = self.compute_delta_orientations(agents=agents)
         # add noise
         delta_orientations = delta_orientations + self.generate_noise()
@@ -339,39 +388,18 @@ class OrientationPerceptionFreeZoneModelSimulator:
         return new_orientations, new_head_orientations
 
     def compute_new_positions(self, agents):
+        """
+        Update the new position based on the current position and orientation
+        """
         positions = np.column_stack((agents[:,0], agents[:,1]))
         orientations = ac.compute_u_v_coordinates_for_angles(angles=agents[:,2])
         positions += self.dt*(orientations.T * agents[:,3]).T
         return positions[:,0], positions[:,1]
-    
-    
-    def has_reached_the_target(self, agents):
-        distances, angles = self.compute_distances_and_angles_to_target(agents=agents)
-        return distances < self.target_radius
-
-    def compute_target_reached(self, agents):
-        distances, _ = self.compute_distances_and_angles_to_target(agents=agents)
-        angles = np.arctan2(self.target_position[1]-agents[:,1], self.target_position[0]-agents[:,0])
-        has_reached_target = distances < self.target_radius
-        orientations = np.where(has_reached_target, angles, agents[:,2])
-        speeds = np.where(has_reached_target, 0, agents[:,3])
-        return orientations, speeds
-
-
-    def has_reached_the_target(self, agents):
-        distances, angles = self.compute_distances_and_angles_to_target(agents=agents)
-        return distances < self.target_radius
-
-    def compute_target_reached(self, agents):
-        distances, _ = self.compute_distances_and_angles_to_target(agents=agents)
-        angles = np.arctan2(self.target_position[1]-agents[:,1], self.target_position[0]-agents[:,0])
-        has_reached_target = distances < self.target_radius
-        orientations = np.where(has_reached_target, angles, agents[:,2])
-        speeds = np.where(has_reached_target, 0, agents[:,3])
-        return orientations, speeds
 
     def run(self, tmax):
-
+        """
+        Runs the simulation for tmax timesteps
+        """
         agent_history = []
         agents = self.initialize()
         self.dt = 1

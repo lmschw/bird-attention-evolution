@@ -12,9 +12,24 @@ import vision.perception_strength as pstrength
 import simulator.weight_options as wo
 import general.angle_conversion as ac
 
+"""
+Implementation of the Vicsek model with perception strengths.
+"""
+
 class VicsekSimulator:
     def __init__(self, animal_type, num_agents, domain_size, start_position, 
                  noise_amplitude, visualize=True, follow=True, graph_freq=5):
+        """
+        Params:
+            - animal_type (Animal): the type of animal 
+            - num_agents (int): the number of animals within the domain
+            - domain_size (tuple of ints): the size of the domain, though it is not strictly bounded and used for display only
+            - start_position (tuple of 2 ints): the position around which the agents are initially distributed
+            - noise_amplitude (float) [optional, default=0]: the amount of noise that is added to the orientation updates
+            - visualize (boolean) [optional, default=True]: whether the simulation should be visualized immediately
+            - follow (boolean) [optional, default=True]: whether the visualization should follow the centroid of the swarm or whether it should show the whole domain
+            - graph_freq (int) [optional, default=5]: how often the visualization should be updated
+        """
         self.animal_type = animal_type
         self.num_agents = num_agents
         self.domain_size = domain_size
@@ -27,6 +42,9 @@ class VicsekSimulator:
         self.states = []
 
     def initialize(self):
+        """
+        Initialises the agents, domain and field of vision.
+        """
         agents = self.init_agents()
         self.current_step = 0
 
@@ -44,6 +62,9 @@ class VicsekSimulator:
         return agents
 
     def init_agents(self):
+        """
+        Initialises the agents (positions and orientations).
+        """
         rng = np.random
         n_points_x = int(np.ceil(np.sqrt(self.num_agents)))
         n_points_y = int(np.ceil(np.sqrt(self.num_agents)))
@@ -71,6 +92,9 @@ class VicsekSimulator:
         return self.curr_agents
 
     def graph_agents(self):
+        """
+        Redraws the visualization for the current positions and orientations of the agents.
+        """
         self.ax.clear()
 
         self.ax.scatter(self.curr_agents[:, 0], self.curr_agents[:, 1], color="white", s=15)
@@ -91,9 +115,15 @@ class VicsekSimulator:
         plt.pause(0.000001)
 
     def generate_noise(self):
+        """
+        Generates noise.
+        """
         return np.random.normal(scale=self.noise_amplitude, size=self.num_agents)
 
     def get_neighbours(self, agents):
+        """
+        Returns an array of booleans representing whether other agents are neighbours.
+        """
         pos_xs = agents[:, 0]
         pos_ys = agents[:, 1]
         xx1, xx2 = np.meshgrid(pos_xs, pos_xs)
@@ -105,6 +135,9 @@ class VicsekSimulator:
         return distances <= self.animal_type.sensing_range
     
     def compute_distances_and_angles(self):
+        """
+        Computes the distances and bearings between the agents.
+        """
         headings = self.curr_agents[:, 2]
 
         pos_xs = self.curr_agents[:, 0]
@@ -124,6 +157,9 @@ class VicsekSimulator:
         return distances, angles
 
     def compute_new_orientations(self, neighbours, orientations):
+        """
+        Computes the new orientations for all agents.
+        """
         dists_conspecifics, angles_conspecifics = self.compute_distances_and_angles()
         perception_strengths_conspecifics, min_agent = pstrength.compute_perception_strengths(angles_conspecifics, dists_conspecifics, self.animal_type)
         orientations_grid = np.concatenate([[orientations]]*len(orientations))
@@ -132,12 +168,18 @@ class VicsekSimulator:
         return np.average(orientations_grid, axis=1) + self.generate_noise()
     
     def compute_new_positions(self, agents):
+        """
+        Update the new position based on the current position and orientation
+        """
         positions = np.column_stack((agents[:,0], agents[:,1]))
         orientations = ac.compute_u_v_coordinates_for_angles(angles=agents[:,2])
         positions += self.dt*orientations
         return positions[:,0], positions[:,1]
     
     def run(self, tmax):
+        """
+        Runs the simulation for tmax timesteps
+        """
         agent_history = []
         agents = self.initialize()
         self.dt = 1

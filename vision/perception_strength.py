@@ -3,7 +3,14 @@ import numpy as np
 import general.normalisation as normal
 import general.angle_conversion as ac
 
+"""
+Contains methods to compute perception strengths.
+"""
+
 def compute_perception_strengths(azimuth_angles_positions, distances, animal_type, is_conspecifics=True):
+    """
+    Computes the perception strengths based on the bearings, distances and animal_type provided.
+    """
     azimuth_angles_positions_pi = ac.wrap_to_pi(azimuth_angles_positions)
     overall_perception_strengths = []
     min_distances = []

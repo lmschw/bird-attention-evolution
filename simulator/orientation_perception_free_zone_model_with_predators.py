@@ -11,6 +11,10 @@ import general.angle_conversion as ac
 import simulator.weight_options as wo
 from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator
 
+"""
+Implementation of the orientation-perception-free zone model with predators and landmarks.
+"""
+
 DIST_MOD = 0.001
 
 class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPerceptionFreeZoneModelSimulator):
@@ -19,6 +23,33 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
                  other_type_weight=1, limit_turns=True, use_distant_dependent_zone_factors=True, weight_options=[], 
                  model=None, single_speed=True, visualize=True, visualize_vision_fields_prey=0, 
                  visualize_vision_fields_predator=0, visualize_head_direction=True, follow=False, graph_freq=5):
+        """
+        Params:
+            - num_prey (int): the number of prey animals within the domain
+            - animal_type_prey (Animal): the type of animal of the prey
+            - num_predators (int): the number of predators within the domain
+            - animal_type_predator (Animal): the type of animal of the predators
+            - domain_size (tuple of ints): the size of the domain, though it is not strictly bounded and used for display only
+            - start_position_prey (tuple of 2 ints): the position around which the prey are initially distributed
+            - start_position_predator (tuple of 2 ints): the position around which the predators are initially distributed
+            - pack_hunting (boolean) [optional, default=False]: whether the predators will consider social information from their conspecifics. Always False if there is only a single predator
+            - landmarks (list of Landmark) [optional, default=[]]: the landmarks within the domain
+            - noise_amplitude (float) [optional, default=0]: the amount of noise that is added to the orientation updates
+            - social_weight (float) [optional, default=1]: how much the agents are influenced by the social information
+            - environment_weight (float) [optional, default=1]: how much the agents are influenced by the landmark information
+            - other_type_weight (float) [optional, default=1]: how much the agents are influenced by prey for predators and predators for prey
+            - limit_turns (boolean) [optional, default=True]: whether the turns can be greater than the max turn angle defined for the animal type
+            - use_distant_dependent_zone_factors (boolean) [optional, default=True]: whether the influence of neighbours should be dependent on their exact distance or only on the zone they're in
+            - weight_options (list of WeightOption) [optional, default=[]]: which information is fed as input to the model
+            - model (NeuralNetwork) [optional, default=None]: the neural network model that determines updates to the head orientations
+            - single_speed (boolean) [optional, default=True]: whether the agents should have the same or slightly different speeds
+            - visualize (boolean) [optional, default=True]: whether the simulation should be visualized immediately
+            - visualize_vision_fields_prey (int) [optional, default=0]: the field of vision of how many prey agents should be visualised. These will be superimposed if necessary
+            - visualize_vision_fields_predator (int) [optional, default=0]: the field of vision of how many predator agents should be visualised. These will be superimposed if necessary
+            - visualize_head_direction (boolean) [optional, default=True]: whether an additional arrow should point in the direction in whichere the head is pointing
+            - follow (boolean) [optional, default=True]: whether the visualization should follow the centroid of the swarm or whether it should show the whole domain
+            - graph_freq (int) [optional, default=5]: how often the visualization should be updated
+        """
         super().__init__(num_agents=num_prey,
                          animal_type=animal_type_prey,
                          domain_size=domain_size,
@@ -49,13 +80,17 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         self.visualize_vision_fields_prey = visualize_vision_fields_prey
         self.visualize_vision_fields_predator = visualize_vision_fields_predator
 
+        # if there is only a single predator, then no social information is available and hence, 
+        # pack hunting is impossible
         if self.num_predators == 1:
             self.pack_hunting = False
 
     def initialize(self):
+        """
+        Initialises the agents, domain and field of vision.
+        """
         prey, predators = self.init_agents()
 
-        # Setup graph
         self.fig, self.ax = plt.subplots()
         self.ax.set_facecolor((0, 0, 0))  
         centroid_x, centroid_y = np.mean(prey[:, 0]), np.mean(prey[:, 1])
@@ -69,6 +104,9 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         return prey, predators
     
     def init_agents(self):
+        """
+        Initialises the agents (positions and orientations) both for prey and predators.
+        """
         prey, self.colours_prey = self.init_agents_for_animal_type(num_agents=self.num_prey, 
                                                animal_type=self.animal_type_prey, 
                                                start_position=self.start_position_prey,
@@ -80,6 +118,9 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         return prey, predators
 
     def init_agents_for_animal_type(self, num_agents, animal_type, start_position, visualize_vision_fields):
+        """
+        Initialises the agents (positions and orientations) for either prey or predators.
+        """
         rng = np.random
         n_points_x = int(np.ceil(np.sqrt(num_agents)))
         n_points_y = int(np.ceil(np.sqrt(num_agents)))
@@ -107,13 +148,14 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
 
         head_angles = np.zeros(num_agents)
 
-        #print(f"Head angles: {head_angles}")
-
         colours = np.random.uniform(0, 1, (visualize_vision_fields, 3))
 
         return np.column_stack([pos_xs, pos_ys, pos_hs, speeds, head_angles]), colours
     
     def graph_vision_fields(self, agents, animal_type, visualize_vision_fields, colours):
+        """
+        Redraws the vision fields for the selected agents.
+        """
         for i in range(visualize_vision_fields):
             for focus_area in animal_type.focus_areas:
                 focus_angle = agents[i,2] + agents[i,4] + focus_area.azimuth_angle_position_horizontal + 2 * np.pi
@@ -128,6 +170,9 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
                 self.ax.add_patch(wedge)
 
     def graph_arrows(self, agents, colour):
+        """
+        Redraws an agent type (prey or predator)
+        """
         uv_coords = ac.compute_u_v_coordinates_for_angles(agents[:,2])
         uv_coords_head = ac.compute_u_v_coordinates_for_angles(agents[:,2] + agents[:,4])
 
@@ -144,9 +189,8 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
 
     def graph_agents(self, prey, predators):
         """
-        Visualizes the state of the simulation with matplotlib
-
-        """  
+        Redraws the visualization for the current positions and orientations of the agents.
+        """
         self.ax.clear()
 
         self.graph_vision_fields(prey, self.animal_type_prey, self.visualize_vision_fields_prey, self.colours_prey)
@@ -158,7 +202,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
                 self.ax.add_patch(landmark.get_patch_for_display())
                 self.ax.annotate(landmark.id, landmark.get_annotation_point(), color="white")
 
-        # Draw prey
+        # Draw prey and predators
         self.graph_arrows(agents=prey, colour="white")
         self.graph_arrows(agents=predators, colour="red")
 
@@ -176,10 +220,8 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
 
     def compute_distances_and_angles_other_type(self, focus_group, other_group):
         """
-        Computes and returns the distances and its x and y elements for all pairs of agents
-
+        Computes the distances and bearings between predator and prey from either point of view.
         """
-        # Build meshgrid 
         focus_group_xs = focus_group[:, 0]
         focus_group_ys = focus_group[:, 1]
         other_group_xs = other_group[:, 0]
@@ -189,8 +231,10 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
 
         return self.compute_distances_and_angles(headings=focus_group[:,2], xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2, transpose_for_angles=True)
     
-
     def compute_delta_orientations_away_from_predators(self, prey, predators):
+        """
+        Computes the orientation difference that is caused by predators on prey (repulsion only).
+        """
         distances, angles = self.compute_distances_and_angles_other_type(prey, predators)
         match_factors = np.full((self.num_prey, self.num_predators), 1) # always repulsed
         side_factors = self.compute_side_factors(angles, shape=(self.num_prey, self.num_predators))
@@ -198,6 +242,9 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
 
     def compute_delta_orientations_towards_prey(self, prey, predators):
+        """
+        Computes the orientation difference that is caused by prey on predators (attraction only).
+        """
         distances, angles = self.compute_distances_and_angles_other_type(predators, prey)
         match_factors = np.full((self.num_predators, self.num_prey), -1) # always attracted
         side_factors = self.compute_side_factors(angles, shape=(self.num_predators, self.num_prey))
@@ -205,6 +252,9 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
 
     def compute_delta_orientations(self, prey, predators, is_prey):
+        """
+        Computes the orientation difference for a single agent type (predator or prey).
+        """
         if is_prey:
             agents = prey
             animal_type = self.animal_type_prey
@@ -230,13 +280,15 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         if not is_prey and not self.pack_hunting:
             social_weight = 0
 
-        #print(delta_orientations_landmarks)
         delta_orientations = social_weight * delta_orientations_conspecifics + self.environment_weight * delta_orientations_landmarks + self.other_type_weight * delta_orientations_other_type
         delta_orientations = np.where((delta_orientations > animal_type.max_turn_angle), animal_type.max_turn_angle, delta_orientations)
         delta_orientations = np.where((delta_orientations < -animal_type.max_turn_angle), -animal_type.max_turn_angle, delta_orientations)
         return delta_orientations, distances, angles, vision_strengths
     
     def compute_new_orientations_for_type(self, prey, predators, is_prey):
+        """
+        Computes the new orientations and head orientations for a single agent type (predator or prey).
+        """
         if is_prey:
             agents = prey
         else:
@@ -254,6 +306,9 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         return new_orientations, new_head_orientations
 
     def compute_new_orientations(self, prey, predators):
+        """
+        Computes the new orientations and head orientations for all agents (predator and prey).
+        """
         self.num_agents = self.num_prey
         prey_orientations, prey_head_orientations = self.compute_new_orientations_for_type(prey, predators, is_prey=True)
         self.num_agents = self.num_predators
@@ -261,7 +316,9 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         return prey_orientations, prey_head_orientations, predators_orientations, predators_head_orientations
     
     def run(self, tmax):
-
+        """
+        Runs the simulation for tmax timesteps
+        """
         prey_history = []
         predator_history = []
         prey, predators = self.initialize()

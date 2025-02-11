@@ -31,8 +31,22 @@ DT = 0.05
 #DT = 1
 DES_DIST = SIGMA * 2**(1/2)
 
+"""
+An implementation of Active Elastic
+"""
+
 class ActiveElasticSimulator:
     def __init__(self, animal_type, num_agents, domain_size, start_position, visualize=True, follow=True, graph_freq=5):
+        """
+        Params:
+            - animal_type (Animal): the type of animal
+            - num_agents (int): the number of agents
+            - domain_size (tuple of ints): how big the domain is (not bounded by these values though)
+            - start_position (tuple of ints): around which points the agents should initially be placed
+            - visualize (boolean) [optional, default=True]: whether the results should be visualized directly
+            - follow (boolean) [optional, default=True]: whether the visualization should follow the centroid of the swarm or whether it should show the whole domain
+            - graph_freq (int) [optional, default=5]: how often the visualization should be updated
+        """
         self.animal_type = animal_type
         self.num_agents = num_agents
         self.domain_size = domain_size
@@ -46,6 +60,9 @@ class ActiveElasticSimulator:
         self.initialize()
 
     def initialize(self):
+        """
+        Initialises the graph and the agents.
+        """
         self.init_agents()
         self.sigmas = np.full(self.num_agents, SIGMA)
         self.current_step = 0
@@ -63,6 +80,9 @@ class ActiveElasticSimulator:
 
 
     def init_agents(self):
+        """
+        Initialises the agents (positions and orientations).
+        """
         rng = np.random
         n_points_x = int(np.ceil(np.sqrt(self.num_agents)))
         n_points_y = int(np.ceil(np.sqrt(self.num_agents)))
@@ -89,6 +109,9 @@ class ActiveElasticSimulator:
         self.curr_agents = np.column_stack([pos_xs, pos_ys, pos_hs])
 
     def graph_agents(self):
+        """
+        Redraws the visualization for the current positions and orientations of the agents.
+        """
         self.ax.clear()
 
         self.ax.scatter(self.curr_agents[:, 0], self.curr_agents[:, 1], color="white", s=15)
@@ -109,6 +132,9 @@ class ActiveElasticSimulator:
         plt.pause(0.000001)
 
     def compute_distances_and_angles(self):
+        """
+        Computes the distances and bearings between the agents.
+        """
         headings = self.curr_agents[:, 2]
 
         pos_xs = self.curr_agents[:, 0]
@@ -128,6 +154,9 @@ class ActiveElasticSimulator:
         return distances, angles
 
     def get_pi_elements(self, distances, angles):
+        """
+        Computes the proximal control vector.
+        """
         forces = -EPSILON * (2 * (self.sigmas[:, np.newaxis] ** 4 / distances ** 5) - (self.sigmas[:, np.newaxis] ** 2 / distances ** 3))
         forces[distances == np.inf] = 0.0
 
@@ -137,6 +166,9 @@ class ActiveElasticSimulator:
         return p_x, p_y
 
     def get_hi_elements(self):
+        """
+        Computes the heading component.
+        """
         headings = self.curr_agents[:, 2]
 
         alignment_coss = np.sum(np.cos(headings))
@@ -150,6 +182,9 @@ class ActiveElasticSimulator:
         return h_x, h_y
 
     def compute_fi(self):
+        """
+        Computes the force components.
+        """
         dists_conspecifics, angles_conspecifics = self.compute_distances_and_angles()
 
         p_x, p_y = self.get_pi_elements(dists_conspecifics, angles_conspecifics)
@@ -161,6 +196,9 @@ class ActiveElasticSimulator:
         return f_x, f_y
     
     def compute_u_w(self, f_x, f_y):
+        """
+        Computes u and w based on the force components.
+        """
         u = K1 * f_x + UC
         u[u > UMAX] = UMAX
         u[u < 0] = 0.0
@@ -172,6 +210,9 @@ class ActiveElasticSimulator:
         return u, w
     
     def update_agents(self):
+        """
+        Updates the agents' positions and orientations based on the spring force.
+        """
         f_x, f_y = self.compute_fi()
         u, w = self.compute_u_w(f_x, f_y)
 
@@ -184,6 +225,9 @@ class ActiveElasticSimulator:
         self.curr_agents[:, 2] = ac.wrap_to_pi(self.curr_agents[:, 2] + w * DT)
 
     def run(self, tmax):
+        """
+        Runs the simulation for tmax time steps.
+        """
         while self.current_step < tmax / DT:
             self.update_agents()
             self.current_step +=1

@@ -1,6 +1,10 @@
 
 from enum import Enum
 
+"""
+Enum containing the options for input for the neural network for head orientation updates.
+"""
+
 class WeightOptions(str, Enum):
     CLOSEST_DISTANCES = "closest_distance"
     CLOSEST_BEARINGS = "closest_bearings"

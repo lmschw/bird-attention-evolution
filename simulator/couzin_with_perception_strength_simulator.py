@@ -12,10 +12,25 @@ import vision.perception_strength as pstrength
 import simulator.weight_options as wo
 import general.angle_conversion as ac
 
+"""
+Implements Couzin et al.'s zone model with added perception strength.
+"""
+
 class CouzinZoneModelSimulator:
     def __init__(self, animal_type, num_agents, domain_size, start_position,
                  noise_amplitude,
                  visualize=True, follow=True, graph_freq=5):
+        """
+        Params:
+            - animal_type (Animal): the type of animal
+            - num_agents (int): the number of agents
+            - domain_size (tuple of ints): how big the domain is (not bounded by these values though)
+            - start_position (tuple of ints): around which points the agents should initially be placed
+            - noise_amplitude (float): how much noise should be added to the orientation updates
+            - visualize (boolean) [optional, default=True]: whether the results should be visualized directly
+            - follow (boolean) [optional, default=True]: whether the visualization should follow the centroid of the swarm or whether it should show the whole domain
+            - graph_freq (int) [optional, default=5]: how often the visualization should be updated
+        """
         self.animal_type = animal_type
         self.num_agents = num_agents
         self.domain_size = domain_size
@@ -28,22 +43,12 @@ class CouzinZoneModelSimulator:
         self.centroid_trajectory = []
         self.states = []
 
-    
-    def compute_field_of_vision(self):
-        min_angle = 0
-        max_angle = 0
-        for focus_area in self.animal_type.focus_areas:
-            if (focus_area.azimuth_angle_position_horizontal - focus_area.angle_field_horizontal) < min_angle:
-                min_angle = (focus_area.azimuth_angle_position_horizontal - focus_area.angle_field_horizontal)
-            elif (focus_area.azimuth_angle_position_horizontal + focus_area.angle_field_horizontal) > max_angle:
-                max_angle = (focus_area.azimuth_angle_position_horizontal + focus_area.angle_field_horizontal)
-        return np.absolute((max_angle+2*np.pi)-(min_angle+2*np.pi))
-
     def initialize(self):
+        """
+        Initialises the agents, domain and field of vision.
+        """
         agents = self.init_agents()
         self.current_step = 0
-
-        self.field_of_vision_half = self.compute_field_of_vision() / 2
 
         # Setup graph
         self.fig, self.ax = plt.subplots()
@@ -57,8 +62,10 @@ class CouzinZoneModelSimulator:
             self.ax.set_ylim(0, self.domain_size[1])
         return agents
 
-
     def init_agents(self):
+        """
+        Initialises the agents (positions and orientations).
+        """
         rng = np.random
         n_points_x = int(np.ceil(np.sqrt(self.num_agents)))
         n_points_y = int(np.ceil(np.sqrt(self.num_agents)))
@@ -86,6 +93,9 @@ class CouzinZoneModelSimulator:
         return self.curr_agents
     
     def graph_agents(self):
+        """
+        Redraws the visualization for the current positions and orientations of the agents.
+        """
         self.ax.clear()
 
         self.ax.scatter(self.curr_agents[:, 0], self.curr_agents[:, 1], color="white", s=15)
@@ -106,6 +116,9 @@ class CouzinZoneModelSimulator:
         plt.pause(0.000001)
 
     def compute_distances_and_angles(self):
+        """
+        Computes the distances and bearings between the agents.
+        """
         headings = self.curr_agents[:, 2]
 
         pos_xs = self.curr_agents[:, 0]
@@ -125,15 +138,27 @@ class CouzinZoneModelSimulator:
         return distances, angles
 
     def get_repulsion_neighbours(self, distances):
-        return distances < 5 # TODO replace
+        """
+        Returns a boolean array representing which other agents are within the repulsion zone
+        """
+        return distances < self.animal_type.preferred_distance_left_right[0]
     
     def get_alignment_neighbours(self, distances):
-        return (distances >= 5) & (distances < 20)
+        """
+        Returns a boolean array representing which other agents are within the alignment zone
+        """
+        return (distances >= self.animal_type.preferred_distance_left_right[0]) & (distances < self.animal_type.preferred_distance_left_right[1])
     
     def get_attraction_neighbours(self, distances):
-        return (distances >= 20) & (distances <= self.animal_type.sensing_range)
+        """
+        Returns a boolean array representing which other agents are within the attraction zone
+        """
+        return (distances >= self.animal_type.preferred_distance_left_right[0]) & (distances <= self.animal_type.sensing_range)
     
     def get_repulsion_orientations(self, positions, neighbours, perception_strengths):
+        """
+        Computes the new orientation based on repulsion for every agent.
+        """
         neighbours_2d =  np.repeat(neighbours[:,:, np.newaxis], 2, axis=2)
         bearings = positions[:,np.newaxis,:] - positions
         bearings = bearings * neighbours_2d
@@ -144,6 +169,9 @@ class CouzinZoneModelSimulator:
         return ac.compute_angles_for_orientations(orientations=orientations)
     
     def get_alignment_orientations(self, headings, neighbours, perception_strengths):
+        """
+        Computes the new orientation based on alignment for every agent.
+        """
         neighbours_2d =  np.repeat(neighbours[:,:, np.newaxis], 2, axis=2)
         orientations = ac.compute_u_v_coordinates_for_angles(headings)
         orientations = orientations * neighbours_2d
@@ -152,6 +180,9 @@ class CouzinZoneModelSimulator:
         return ac.compute_angles_for_orientations(orientations=new_orientations)
     
     def get_attraction_orientations(self, positions, neighbours, perception_strengths):
+        """
+        Computes the new orientation based on attraction for every agent.
+        """
         neighbours_2d =  np.repeat(neighbours[:,:, np.newaxis], 2, axis=2)
         bearings = positions[:,np.newaxis,:] - positions
         bearings = bearings * neighbours_2d
@@ -162,6 +193,13 @@ class CouzinZoneModelSimulator:
         return ac.compute_angles_for_orientations(orientations=orientations)
     
     def compute_new_orientations(self, agents):
+        """
+        Computes the new orientations based on the following logic:
+        1) if there are any neighbours within the repulsion zone, then the orientation based on those neighbours is used
+        2) if there are neighbours in both the alignment and attraction zones, then the average of the orientations of these two zones is used
+        3) if there are neighbours in the alignment or attraction zone but not both, then the respective orientation is used
+        4) if there are no neighbours at all, the orientation remains unchanged
+        """
         positions = np.column_stack((agents[:,0], agents[:,1]))
         distances, angles = self.compute_distances_and_angles()
 
@@ -190,12 +228,18 @@ class CouzinZoneModelSimulator:
         return new_orientations
     
     def compute_new_positions(self, agents):
+        """
+        Update the new position based on the current position and orientation
+        """
         positions = np.column_stack((agents[:,0], agents[:,1]))
         orientations = ac.compute_u_v_coordinates_for_angles(agents[:,2])
         positions += orientations * self.dt
         return positions[:,0], positions[:,1]
 
     def run(self, tmax):
+        """
+        Runs the simulation for tmax timesteps
+        """
         agent_history = []
         agents = self.initialize()
         self.dt = 1

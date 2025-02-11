@@ -41,7 +41,7 @@ def wrap_angle_to_pi(x):
         return -(2*np.pi - x)
     return x
 
-def wrap_to_2_pi(self, x):
+def wrap_to_2_pi(x):
     return (2*np.pi*x) % (2*np.pi)
 
 def compute_u_v_coordinates_for_angles(angles):

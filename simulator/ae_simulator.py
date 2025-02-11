@@ -48,11 +48,13 @@ class PigeonSimulatorAe:
         self.follow = follow
         self.graph_freq = graph_freq
         self.curr_agents = None
+        self.centroid_trajectory = []
         self.states = []
         self.initialize()
 
     def initialize(self):
-        self.init_agents(self.num_agents)
+        self.init_agents()
+        self.sigmas = np.full(self.num_agents, SIGMA)
         self.current_step = 0
 
         # Setup graph

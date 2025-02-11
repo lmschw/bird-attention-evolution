@@ -13,7 +13,6 @@ import simulator.weight_options as wo
 import general.angle_conversion as ac
 
 class CouzinZoneModelSimulator:
-
     def __init__(self, animal_type, num_agents, domain_size, start_position,
                  noise_amplitude,
                  visualize=True, follow=True, graph_freq=5):
@@ -29,6 +28,7 @@ class CouzinZoneModelSimulator:
         self.centroid_trajectory = []
         self.states = []
 
+    
     def compute_field_of_vision(self):
         min_angle = 0
         max_angle = 0
@@ -62,7 +62,7 @@ class CouzinZoneModelSimulator:
         rng = np.random
         n_points_x = int(np.ceil(np.sqrt(self.num_agents)))
         n_points_y = int(np.ceil(np.sqrt(self.num_agents)))
-        spacing = 0.8
+        spacing = self.animal_type.preferred_distance_left_right[1]
         init_x = 0
         init_y = 0
 
@@ -84,7 +84,7 @@ class CouzinZoneModelSimulator:
 
         self.curr_agents = np.column_stack([pos_xs, pos_ys, pos_hs])
         return self.curr_agents
-
+    
     def graph_agents(self):
         self.ax.clear()
 
@@ -105,30 +105,11 @@ class CouzinZoneModelSimulator:
 
         plt.pause(0.000001)
 
-    def generate_noise(self):
-        return np.random.normal(scale=self.noise_amplitude, size=(self.num_agents, len(self.domain_size)))
+    def compute_distances_and_angles(self):
+        headings = self.curr_agents[:, 2]
 
-    def get_neighbour_unit_vectors(self, agents):
-        positions = np.column_stack((agents[:,0], agents[:,1]))
-        return positions[:,np.newaxis,:]-positions   
-    
-    def get_neighbours_repulsion_zone(self, distances):
-        repulsion_radius = self.animal_type.preferred_distance_left_right[0]
-        return distances < repulsion_radius
-    
-    def get_neighbours_alignment_zone(self, distances):
-        repulsion_radius = self.animal_type.preferred_distance_left_right[0]
-        attraction_radius = self.animal_type.preferred_distance_left_right[1]
-        return (repulsion_radius < distances) & (distances < attraction_radius)
-    
-    def get_neighbours_attraction_zone(self, distances):
-        attraction_radius = self.animal_type.preferred_distance_left_right[1]
-        return (attraction_radius < distances) & (distances < self.animal_type.sensing_range)
-    
-    def computes_distances_and_angles(self, agents):
-        # Build meshgrid 
-        pos_xs = agents[:, 0]
-        pos_ys = agents[:, 1]
+        pos_xs = self.curr_agents[:, 0]
+        pos_ys = self.curr_agents[:, 1]
         xx1, xx2 = np.meshgrid(pos_xs, pos_xs)
         yy1, yy2 = np.meshgrid(pos_ys, pos_ys)
 
@@ -137,85 +118,80 @@ class CouzinZoneModelSimulator:
         distances = np.sqrt(np.multiply(x_diffs, x_diffs) + np.multiply(y_diffs, y_diffs))  
         distances[distances > self.animal_type.sensing_range] = np.inf
         distances[distances == 0.0] = np.inf
-
-        headings = agents[:,2]
-        angles = ac.wrap_to_pi(np.arctan2(y_diffs, x_diffs) - headings[:, np.newaxis])
+        
+        headings = self.curr_agents[:, 2]
+        angles = np.arctan2(y_diffs, x_diffs) - headings[:, np.newaxis]
 
         return distances, angles
 
-    def apply_vision_field(self, neighbours, bearings):
-        return np.where(np.absolute(bearings) <= self.field_of_vision_half, neighbours, False)
-
+    def get_repulsion_neighbours(self, distances):
+        return distances < 5 # TODO replace
+    
+    def get_alignment_neighbours(self, distances):
+        return (distances >= 5) & (distances < 20)
+    
+    def get_attraction_neighbours(self, distances):
+        return (distances >= 20) & (distances <= self.animal_type.sensing_range)
+    
+    def get_repulsion_orientations(self, positions, neighbours):
+        neighbours_2d =  np.repeat(neighbours[:,:, np.newaxis], 2, axis=2)
+        bearings = positions[:,np.newaxis,:] - positions
+        bearings = bearings * neighbours_2d
+        bearings_norm = np.repeat(np.linalg.norm(bearings, axis=2)[:,:, np.newaxis], 2, axis=2)
+        rij = np.divide(bearings, bearings_norm, out=np.zeros_like(bearings), where=bearings_norm!=0)
+        rij_norm = np.linalg.norm(rij)
+        orientations = np.sum(np.divide(rij, rij_norm, out=np.zeros_like(rij), where=rij_norm!=0), axis=1)
+        return ac.compute_angles_for_orientations(orientations=orientations)
+    
+    def get_alignment_orientations(self, headings, neighbours):
+        neighbours_2d =  np.repeat(neighbours[:,:, np.newaxis], 2, axis=2)
+        orientations = ac.compute_u_v_coordinates_for_angles(headings)
+        orientations = orientations * neighbours_2d
+        norm_aligned = np.linalg.norm(orientations, axis=1)
+        new_orientations = np.sum(np.divide(orientations, norm_aligned, out=np.zeros_like(orientations), where=norm_aligned!=0), axis=1)
+        return ac.compute_angles_for_orientations(orientations=new_orientations)
+    
+    def get_attraction_orientations(self, positions, neighbours):
+        neighbours_2d =  np.repeat(neighbours[:,:, np.newaxis], 2, axis=2)
+        bearings = positions[:,np.newaxis,:] - positions
+        bearings = bearings * neighbours_2d
+        bearings_norm = np.repeat(np.linalg.norm(bearings, axis=2)[:,:, np.newaxis], 2, axis=2)
+        rij = np.divide(bearings, bearings_norm, out=np.zeros_like(bearings), where=bearings_norm!=0)
+        rij_norm = np.linalg.norm(rij)
+        orientations = -np.sum(np.divide(rij, rij_norm, out=np.zeros_like(rij), where=rij_norm!=0), axis=1)
+        return ac.compute_angles_for_orientations(orientations=orientations)
+    
     def compute_new_orientations(self, agents):
-        orientations = ac.compute_u_v_coordinates_for_angles(agents[:,2])
+        positions = np.column_stack((agents[:,0], agents[:,1]))
+        distances, angles = self.compute_distances_and_angles()
 
-        distance_vectors = self.get_neighbour_unit_vectors(agents=agents)
-        distances_x = distance_vectors[:,:,0]
-        np.fill_diagonal(distances_x, np.inf)
-        distances_y = distance_vectors[:,:,1]
-        np.fill_diagonal(distances_y, np.inf)
-        distance_vectors = np.dstack((distances_x, distances_y))
+        repulsed = self.get_repulsion_neighbours(distances=distances)
+        aligned = self.get_alignment_neighbours(distances=distances)
+        attracted = self.get_attraction_neighbours(distances=distances)
 
-        distances, angles = self.computes_distances_and_angles(agents=agents)
+        repulsion_orientations = self.get_repulsion_orientations(positions=positions, neighbours=repulsed)
+        alignment_orientations = self.get_alignment_orientations(headings=agents[:,2], neighbours=aligned)
+        attraction_orientations = self.get_attraction_orientations(positions=positions, neighbours=attracted)
 
-        repulsed = self.get_neighbours_repulsion_zone(distances=distances)
-        aligned = self.get_neighbours_alignment_zone(distances=distances)
-        attracted = self.get_neighbours_attraction_zone(distances=distances)
+        avg_orientations_aligned_attracted = (alignment_orientations + attraction_orientations) / 2
 
-        distances[distances == np.inf] = 0
-        distance_vectors[distance_vectors == np.inf] = 0
+        has_repulsed = np.count_nonzero(repulsed, axis=1) > 0
+        has_aligned = np.count_nonzero(aligned, axis=1) > 0
+        has_attracted = np.count_nonzero(attracted, axis=1) > 0
 
-        repulsed_2d = np.repeat(repulsed[:,:, np.newaxis], 2, axis=2)
-        distances_repulsed = distance_vectors * repulsed_2d
-        norm_repulsed = np.linalg.norm(distances_repulsed, axis=1)
-        new_orientations_repulsed = -np.sum(np.divide(distances_repulsed, norm_repulsed, out=np.zeros_like(distances_repulsed), where=norm_repulsed!=0), axis=1)
-        #new_orientations_repulsed = -np.sum(distances_repulsed / np.linalg.norm(distances_repulsed, axis=1), axis=1)
+        new_orientations = np.where((has_aligned), alignment_orientations, agents[:,2])
+        new_orientations = np.where((has_attracted), attraction_orientations, new_orientations)
+        new_orientations = np.where((has_aligned & has_attracted), avg_orientations_aligned_attracted, new_orientations)
+        new_orientations = np.where(has_repulsed, repulsion_orientations, new_orientations)
 
-        aligned = self.apply_vision_field(neighbours=aligned, bearings=angles)
-        aligned_2d = np.repeat(aligned[:,:, np.newaxis], 2, axis=2)
-        orientations_aligned = orientations * aligned_2d
-        norm_aligned = np.linalg.norm(orientations_aligned, axis=1)
-        new_orientations_aligned = np.sum(np.divide(orientations_aligned, norm_aligned, out=np.zeros_like(orientations_aligned), where=norm_aligned!=0), axis=1)
-        #new_orientations_aligned = np.sum(orientations_aligned / np.linalg.norm(orientations_aligned, axis=1), axis=1)
-
-        attracted = self.apply_vision_field(neighbours=attracted, bearings=angles)
-        attracted_2d = np.repeat(attracted[:,:, np.newaxis], 2, axis=2)
-        distances_attracted = distance_vectors * attracted_2d
-        norm_attracted = np.linalg.norm(distances_attracted, axis=1)
-        new_orientations_attracted = np.sum(np.divide(distances_attracted, norm_attracted, out=np.zeros_like(distances_attracted), where=norm_attracted!=0), axis=1)
-        #new_orientations_attracted = -np.sum(distances_attracted / np.linalg.norm(distances_attracted, axis=1), axis=1)
-
-        avg_orientations_aligned_attracted = (new_orientations_aligned + new_orientations_attracted) / 2
-
-        print(f"rep: {np.count_nonzero(repulsed)}, align: {np.count_nonzero(aligned)}, attr: {np.count_nonzero(attracted)}, sums: {np.count_nonzero(repulsed) + np.count_nonzero(aligned) + np.count_nonzero(attracted)}")
-
-        new_orientations = orientations
-        new_orientations = np.where(((np.count_nonzero(aligned_2d, axis=1) & np.count_nonzero(attracted_2d, axis=1))), avg_orientations_aligned_attracted, new_orientations)
-        new_orientations = np.where((np.count_nonzero(aligned_2d, axis=1) == 0), new_orientations_attracted, new_orientations)
-        new_orientations = np.where((np.count_nonzero(attracted_2d, axis=1) == 0), new_orientations_aligned, new_orientations)
-        new_orientations = np.where(np.count_nonzero(repulsed_2d, axis=1), new_orientations_repulsed, new_orientations)
-
-
-        """
-        new_orientations = np.where(np.count_nonzero(repulsed, axis=1), new_orientations_repulsed, 0)
-        new_orientations = np.where(((new_orientations == 0) & (np.count_nonzero(attracted, axis=1) == 0)), new_orientations_aligned, new_orientations)
-        new_orientations = np.where(((new_orientations == 0) & (np.count_nonzero(aligned, axis=1) == 0)), new_orientations_attracted, new_orientations)
-        new_orientations = np.where(((new_orientations == 0) & ((np.count_nonzero(aligned, axis=1) & np.count_nonzero(attracted, axis=1)))), avg_orientations_aligned_attracted, new_orientations)
-        new_orientations = np.where((new_orientations == 0), agents[:,2], new_orientations)
-        """
-        new_orientations += self.generate_noise()
-        new_1d_orientations = ac.compute_angles_for_orientations(new_orientations)
-        new_1d_orientations = np.where(((new_1d_orientations < agents[:,2])&((agents[:,2]-new_1d_orientations) > self.animal_type.max_turn_angle)), (agents[:,2]-self.animal_type.max_turn_angle), new_1d_orientations)
-        new_1d_orientations = np.where(((new_1d_orientations > agents[:,2])&((new_1d_orientations-agents[:,2]) > self.animal_type.max_turn_angle)), (agents[:,2]+self.animal_type.max_turn_angle), new_1d_orientations)
-        
-        return new_1d_orientations
+        return new_orientations
     
     def compute_new_positions(self, agents):
         positions = np.column_stack((agents[:,0], agents[:,1]))
-        orientations = ac.compute_u_v_coordinates_for_angles(angles=agents[:,2])
-        positions += self.dt*orientations
+        orientations = ac.compute_u_v_coordinates_for_angles(agents[:,2])
+        positions += orientations * self.dt
         return positions[:,0], positions[:,1]
-    
+
     def run(self, tmax):
         agent_history = []
         agents = self.initialize()
@@ -236,4 +212,4 @@ class CouzinZoneModelSimulator:
             agent_history.append(agents)
             
         plt.close()
-        return np.array(agent_history)
+        return np.array(agent_history) 

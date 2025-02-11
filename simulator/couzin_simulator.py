@@ -106,7 +106,7 @@ class CouzinZoneModelSimulator:
         plt.pause(0.000001)
 
     def generate_noise(self):
-        return np.random.normal(scale=self.noise_amplitude, size=self.num_agents)
+        return np.random.normal(scale=self.noise_amplitude, size=(self.num_agents, len(self.domain_size)))
 
     def get_neighbour_unit_vectors(self, agents):
         positions = np.column_stack((agents[:,0], agents[:,1]))
@@ -147,6 +147,8 @@ class CouzinZoneModelSimulator:
         return np.where(np.absolute(bearings) <= self.field_of_vision_half, neighbours, False)
 
     def compute_new_orientations(self, agents):
+        orientations = ac.compute_u_v_coordinates_for_angles(agents[:,2])
+
         distance_vectors = self.get_neighbour_unit_vectors(agents=agents)
         distances_x = distance_vectors[:,:,0]
         np.fill_diagonal(distances_x, np.inf)
@@ -161,20 +163,24 @@ class CouzinZoneModelSimulator:
         attracted = self.get_neighbours_attraction_zone(distances=distances)
 
         distances[distances == np.inf] = 0
+        distance_vectors[distance_vectors == np.inf] = 0
 
-        distances_repulsed = distances * repulsed
+        repulsed_2d = np.repeat(repulsed[:,:, np.newaxis], 2, axis=2)
+        distances_repulsed = distance_vectors * repulsed_2d
         norm_repulsed = np.linalg.norm(distances_repulsed, axis=1)
         new_orientations_repulsed = -np.sum(np.divide(distances_repulsed, norm_repulsed, out=np.zeros_like(distances_repulsed), where=norm_repulsed!=0), axis=1)
         #new_orientations_repulsed = -np.sum(distances_repulsed / np.linalg.norm(distances_repulsed, axis=1), axis=1)
 
         aligned = self.apply_vision_field(neighbours=aligned, bearings=angles)
-        orientations_aligned = agents[:,2] * aligned
+        aligned_2d = np.repeat(aligned[:,:, np.newaxis], 2, axis=2)
+        orientations_aligned = orientations * aligned_2d
         norm_aligned = np.linalg.norm(orientations_aligned, axis=1)
         new_orientations_aligned = np.sum(np.divide(orientations_aligned, norm_aligned, out=np.zeros_like(orientations_aligned), where=norm_aligned!=0), axis=1)
         #new_orientations_aligned = np.sum(orientations_aligned / np.linalg.norm(orientations_aligned, axis=1), axis=1)
 
         attracted = self.apply_vision_field(neighbours=attracted, bearings=angles)
-        distances_attracted = distances * attracted
+        attracted_2d = np.repeat(attracted[:,:, np.newaxis], 2, axis=2)
+        distances_attracted = distance_vectors * attracted_2d
         norm_attracted = np.linalg.norm(distances_attracted, axis=1)
         new_orientations_attracted = np.sum(np.divide(distances_attracted, norm_attracted, out=np.zeros_like(distances_attracted), where=norm_attracted!=0), axis=1)
         #new_orientations_attracted = -np.sum(distances_attracted / np.linalg.norm(distances_attracted, axis=1), axis=1)
@@ -183,11 +189,11 @@ class CouzinZoneModelSimulator:
 
         print(f"rep: {np.count_nonzero(repulsed)}, align: {np.count_nonzero(aligned)}, attr: {np.count_nonzero(attracted)}, sums: {np.count_nonzero(repulsed) + np.count_nonzero(aligned) + np.count_nonzero(attracted)}")
 
-        new_orientations = agents[:,2]
-        new_orientations = np.where(((np.count_nonzero(aligned, axis=1) & np.count_nonzero(attracted, axis=1))), avg_orientations_aligned_attracted, new_orientations)
-        new_orientations = np.where((np.count_nonzero(aligned, axis=1) == 0), new_orientations_attracted, new_orientations)
-        new_orientations = np.where((np.count_nonzero(attracted, axis=1) == 0), new_orientations_aligned, new_orientations)
-        new_orientations = np.where(np.count_nonzero(repulsed, axis=1), new_orientations_repulsed, new_orientations)
+        new_orientations = orientations
+        new_orientations = np.where(((np.count_nonzero(aligned_2d, axis=1) & np.count_nonzero(attracted_2d, axis=1))), avg_orientations_aligned_attracted, new_orientations)
+        new_orientations = np.where((np.count_nonzero(aligned_2d, axis=1) == 0), new_orientations_attracted, new_orientations)
+        new_orientations = np.where((np.count_nonzero(attracted_2d, axis=1) == 0), new_orientations_aligned, new_orientations)
+        new_orientations = np.where(np.count_nonzero(repulsed_2d, axis=1), new_orientations_repulsed, new_orientations)
 
 
         """
@@ -198,9 +204,11 @@ class CouzinZoneModelSimulator:
         new_orientations = np.where((new_orientations == 0), agents[:,2], new_orientations)
         """
         new_orientations += self.generate_noise()
-        new_orientations = np.where(((new_orientations < agents[:,2])&((agents[:,2]-new_orientations) > self.animal_type.max_turn_angle)), (agents[:,2]-self.animal_type.max_turn_angle), new_orientations)
-        new_orientations = np.where(((new_orientations > agents[:,2])&((new_orientations-agents[:,2]) > self.animal_type.max_turn_angle)), (agents[:,2]+self.animal_type.max_turn_angle), new_orientations)
-        return new_orientations
+        new_1d_orientations = ac.compute_angles_for_orientations(new_orientations)
+        new_1d_orientations = np.where(((new_1d_orientations < agents[:,2])&((agents[:,2]-new_1d_orientations) > self.animal_type.max_turn_angle)), (agents[:,2]-self.animal_type.max_turn_angle), new_1d_orientations)
+        new_1d_orientations = np.where(((new_1d_orientations > agents[:,2])&((new_1d_orientations-agents[:,2]) > self.animal_type.max_turn_angle)), (agents[:,2]+self.animal_type.max_turn_angle), new_1d_orientations)
+        
+        return new_1d_orientations
     
     def compute_new_positions(self, agents):
         positions = np.column_stack((agents[:,0], agents[:,1]))

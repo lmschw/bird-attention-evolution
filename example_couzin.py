@@ -11,7 +11,7 @@ visualize = True
 follow = False
 animal_type = Pigeon()
 start_position = (300, 300)
-noise_amplitude = 0.1
+noise_amplitude = 0
 
 sim = CouzinZoneModelSimulator(animal_type=animal_type, num_agents=n_agents, domain_size=domain_size,
                         start_position=start_position, noise_amplitude=noise_amplitude,

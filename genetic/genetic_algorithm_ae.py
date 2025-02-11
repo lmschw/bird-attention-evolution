@@ -13,7 +13,7 @@ import genetic.metrics_functions as metfunc
 import general.normalisation as normal
 import loggers.logger as logger
 
-from simulator.ae_simulator import PigeonSimulatorAe
+from simulator.ae_simulator_with_perception_strength import ActiveElasticWithPerceptionStrengthSimulator
 from animal_models.pigeon import Pigeon
 
 class DifferentialEvolution:
@@ -97,7 +97,7 @@ class DifferentialEvolution:
         weights = self.update_weights(weights)
         model = self.create_neural_network(weights=weights)
         for i in range(self.num_iterations_per_individual):
-            simulator = PigeonSimulatorAe(animal_type=self.animal_type,
+            simulator = ActiveElasticWithPerceptionStrengthSimulator(animal_type=self.animal_type,
                                           num_agents=self.num_agents,
                                           domain_size=self.domain_size,
                                           start_position=(0,0),

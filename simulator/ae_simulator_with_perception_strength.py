@@ -33,7 +33,7 @@ DT = 1
 DES_DIST = SIGMA * 2**(1/2)
 PERCEPTION_STRENGTH_MODIFIER = 5
 
-class ActiveElasticSimulator:
+class ActiveElasticWithPerceptionStrengthSimulator:
     def __init__(self, animal_type, num_agents, domain_size, start_position,
                  weight_options=[], model=None,
                  visualize=True, follow=True, graph_freq=5):
@@ -134,8 +134,8 @@ class ActiveElasticSimulator:
         return distances, angles
     
 
-    def get_pi_elements(self, distances_conspecifics, angles_conspecifics):
-        forces_conspecifics = -EPSILON * (2 * (self.sigmas[:, np.newaxis] ** 4 / distances_conspecifics ** 5) - (self.sigmas[:, np.newaxis] ** 2 / distances_conspecifics ** 3))
+    def get_pi_elements(self, distances_conspecifics, angles_conspecifics, perception_strengths_conspecifics):
+        forces_conspecifics = -EPSILON * perception_strengths_conspecifics * PERCEPTION_STRENGTH_MODIFIER * (2 * (self.sigmas[:, np.newaxis] ** 4 / distances_conspecifics ** 5) - (self.sigmas[:, np.newaxis] ** 2 / distances_conspecifics ** 3))
         forces_conspecifics[distances_conspecifics == np.inf] = 0.0
 
         p_x_conspecifics = np.sum(np.multiply(forces_conspecifics, np.cos(angles_conspecifics)), axis=1)
@@ -161,9 +161,11 @@ class ActiveElasticSimulator:
 
     def compute_fi(self):
         dists_conspecifics, angles_conspecifics = self.compute_distances_and_angles()
+        perception_strengths_conspecifics, min_agent = pstrength.compute_perception_strengths(angles_conspecifics, dists_conspecifics, self.animal_type)
 
         p_x, p_y = self.get_pi_elements(distances_conspecifics=dists_conspecifics,
-                                        angles_conspecifics=angles_conspecifics)
+                                        angles_conspecifics=angles_conspecifics,
+                                        perception_strengths_conspecifics=perception_strengths_conspecifics)
         h_x, h_y = self.get_hi_elements()
 
         f_x = ALPHA * p_x + BETA * h_x 

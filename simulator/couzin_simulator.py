@@ -198,7 +198,8 @@ class CouzinZoneModelSimulator:
         new_orientations = np.where((new_orientations == 0), agents[:,2], new_orientations)
         """
         new_orientations += self.generate_noise()
-        new_orientations = np.where((np.absolute(new_orientations-agents[:,2]) > self.animal_type.max_turn_angle), self.animal_type.max_turn_angle, new_orientations)
+        new_orientations = np.where(((new_orientations < agents[:,2])&((agents[:,2]-new_orientations) > self.animal_type.max_turn_angle)), (agents[:,2]-self.animal_type.max_turn_angle), new_orientations)
+        new_orientations = np.where(((new_orientations > agents[:,2])&((new_orientations-agents[:,2]) > self.animal_type.max_turn_angle)), (agents[:,2]+self.animal_type.max_turn_angle), new_orientations)
         return new_orientations
     
     def compute_new_positions(self, agents):

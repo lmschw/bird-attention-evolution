@@ -8,9 +8,9 @@ n_steps = 10000
 domain_size = (500, 500)
 graph_freq = 10
 visualize = True
-follow = True
+follow = False
 animal_type = Pigeon()
-start_position = (10, 10)
+start_position = (300, 300)
 noise_amplitude = 0.1
 
 sim = CouzinZoneModelSimulator(animal_type=animal_type, num_agents=n_agents, domain_size=domain_size,

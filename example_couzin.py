@@ -1,16 +1,16 @@
 from animal_models.pigeon import Pigeon
 from area_models.landmark import Landmark
-from simulator.couzin_simulator import CouzinZoneModelSimulator
+from simulator.couzin_with_perception_strength_simulator import CouzinZoneModelSimulator
 
 
 n_agents = 10
 n_steps = 10000
-domain_size = (500, 500)
+domain_size = (5000, 5000)
 graph_freq = 10
 visualize = True
-follow = False
+follow = True
 animal_type = Pigeon()
-start_position = (300, 300)
+start_position = (3000, 3000)
 noise_amplitude = 0
 
 sim = CouzinZoneModelSimulator(animal_type=animal_type, num_agents=n_agents, domain_size=domain_size,

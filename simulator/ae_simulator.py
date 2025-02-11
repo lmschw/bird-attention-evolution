@@ -8,8 +8,6 @@ from datetime import datetime
 from shapely.geometry import LineString, Point
 from shapely.ops import nearest_points
 
-import vision.perception_strength as pstrength
-import simulator.weight_options as wo
 import general.angle_conversion as ac
 
 # AE Constants
@@ -29,20 +27,16 @@ K1 = 0.6
 K2 = 0.05
 L_0 = 0.5
 K_REP = 2.0
-DT = 1
+DT = 0.05
+#DT = 1
 DES_DIST = SIGMA * 2**(1/2)
-PERCEPTION_STRENGTH_MODIFIER = 5
 
 class ActiveElasticSimulator:
-    def __init__(self, animal_type, num_agents, domain_size, start_position,
-                 weight_options=[], model=None,
-                 visualize=True, follow=True, graph_freq=5):
+    def __init__(self, animal_type, num_agents, domain_size, start_position, visualize=True, follow=True, graph_freq=5):
         self.animal_type = animal_type
         self.num_agents = num_agents
         self.domain_size = domain_size
         self.start_position = start_position
-        self.weight_options = weight_options
-        self.model = model
         self.visualize = visualize
         self.follow = follow
         self.graph_freq = graph_freq
@@ -72,7 +66,7 @@ class ActiveElasticSimulator:
         rng = np.random
         n_points_x = int(np.ceil(np.sqrt(self.num_agents)))
         n_points_y = int(np.ceil(np.sqrt(self.num_agents)))
-        spacing = 0.8
+        spacing = self.animal_type.preferred_distance_left_right[1]
         init_x = 0
         init_y = 0
 
@@ -101,7 +95,7 @@ class ActiveElasticSimulator:
         self.ax.quiver(self.curr_agents[:, 0], self.curr_agents[:, 1],
                     np.cos(self.curr_agents[:, 2]), np.sin(self.curr_agents[:, 2]),
                     color="white", width=0.005, scale=40)
-    
+        
         self.ax.set_facecolor((0, 0, 0))
 
         centroid_x, centroid_y = np.mean(self.curr_agents[:, 0]), np.mean(self.curr_agents[:, 1])
@@ -109,8 +103,8 @@ class ActiveElasticSimulator:
             self.ax.set_xlim(centroid_x-10, centroid_x+10)
             self.ax.set_ylim(centroid_y-10, centroid_y+10)
         else:
-            self.ax.set_xlim(0, self.domain_size[0])
-            self.ax.set_ylim(0, self.domain_size[1])
+            self.ax.set_xlim(-self.domain_size, self.domain_size)
+            self.ax.set_ylim(-self.domain_size, self.domain_size)
 
         plt.pause(0.000001)
 
@@ -126,23 +120,19 @@ class ActiveElasticSimulator:
         y_diffs = yy1 - yy2
         distances = np.sqrt(np.multiply(x_diffs, x_diffs) + np.multiply(y_diffs, y_diffs))  
         distances[distances > self.animal_type.sensing_range] = np.inf
-        distances[distances == 0.0] = np.inf        
-
+        distances[distances == 0.0] = np.inf
+        
         headings = self.curr_agents[:, 2]
-        angles = ac.wrap_to_pi(np.arctan2(y_diffs, x_diffs) - headings[:, np.newaxis])
+        angles = np.arctan2(y_diffs, x_diffs) - headings[:, np.newaxis]
 
         return distances, angles
-    
 
-    def get_pi_elements(self, distances_conspecifics, angles_conspecifics):
-        forces_conspecifics = -EPSILON * (2 * (self.sigmas[:, np.newaxis] ** 4 / distances_conspecifics ** 5) - (self.sigmas[:, np.newaxis] ** 2 / distances_conspecifics ** 3))
-        forces_conspecifics[distances_conspecifics == np.inf] = 0.0
+    def get_pi_elements(self, distances, angles):
+        forces = -EPSILON * (2 * (self.sigmas[:, np.newaxis] ** 4 / distances ** 5) - (self.sigmas[:, np.newaxis] ** 2 / distances ** 3))
+        forces[distances == np.inf] = 0.0
 
-        p_x_conspecifics = np.sum(np.multiply(forces_conspecifics, np.cos(angles_conspecifics)), axis=1)
-        p_y_conspecifics = np.sum(np.multiply(forces_conspecifics, np.sin(angles_conspecifics)), axis=1)
-
-        p_x = p_x_conspecifics
-        p_y = p_y_conspecifics
+        p_x = np.sum(np.multiply(forces, np.cos(angles)), axis=1)
+        p_y = np.sum(np.multiply(forces, np.sin(angles)), axis=1)
 
         return p_x, p_y
 
@@ -162,13 +152,12 @@ class ActiveElasticSimulator:
     def compute_fi(self):
         dists_conspecifics, angles_conspecifics = self.compute_distances_and_angles()
 
-        p_x, p_y = self.get_pi_elements(distances_conspecifics=dists_conspecifics,
-                                        angles_conspecifics=angles_conspecifics)
+        p_x, p_y = self.get_pi_elements(dists_conspecifics, angles_conspecifics)
         h_x, h_y = self.get_hi_elements()
 
         f_x = ALPHA * p_x + BETA * h_x 
         f_y = ALPHA * p_y + BETA * h_y 
-        
+
         return f_x, f_y
     
     def compute_u_w(self, f_x, f_y):
@@ -194,20 +183,17 @@ class ActiveElasticSimulator:
         self.curr_agents[:, 1] = self.curr_agents[:, 1] + y_vel * DT
         self.curr_agents[:, 2] = ac.wrap_to_pi(self.curr_agents[:, 2] + w * DT)
 
-    def run(self, tmax=1000):
-        t = 0
-        while t < tmax:
-            t += DT
-            self.current_step = t
-
+    def run(self, tmax):
+        while self.current_step < tmax / DT:
             self.update_agents()
-            
+            self.current_step +=1
+
             self.states.append(self.curr_agents.copy())
             centroid_x, centroid_y = np.mean(self.curr_agents[:, 0]), np.mean(self.curr_agents[:, 1])
             self.centroid_trajectory.append((centroid_x, centroid_y))
 
             if not (self.current_step % self.graph_freq) and self.visualize and self.current_step > 0:
-                 self.graph_agents()
+                self.graph_agents()
 
         plt.close()
         return self.states

@@ -72,7 +72,7 @@ class ActiveElasticWithPerceptionStrengthSimulator:
         rng = np.random
         n_points_x = int(np.ceil(np.sqrt(self.num_agents)))
         n_points_y = int(np.ceil(np.sqrt(self.num_agents)))
-        spacing = 0.8
+        spacing = self.animal_type.preferred_distance_left_right[1]
         init_x = 0
         init_y = 0
 

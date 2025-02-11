@@ -4,7 +4,7 @@ from simulator.enum_weight_options import WeightOptions
 from animal_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 
-from genetic.genetic_algorithm_ps2 import DifferentialEvolution
+from genetic.genetic_algorithm_opfzm import DifferentialEvolution
 from genetic.metrics import Metrics
 
 import loggers.logger as logger

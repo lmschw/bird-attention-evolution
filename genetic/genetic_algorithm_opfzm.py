@@ -16,6 +16,10 @@ import loggers.logger as logger
 from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator
 from animal_models.pigeon import Pigeon
 
+"""
+Implements Differential Evolution for the Orientation Perception Free Zone Model implementation evolving the head movement via a neural network.
+"""
+
 class DifferentialEvolution:
     def __init__(self, tmax, num_agents=None, animal_type=Pigeon(), domain_size=(50,50), weight_options=[],
                  num_generations=1000, num_iterations_per_individual=1, 
@@ -26,23 +30,21 @@ class DifferentialEvolution:
         Models the DE approach.
 
         Params:
-            - radius (int): the perception radius of the particles
             - tmax (int): the number of timesteps for each simulation
-            - grid_size (tuple of floats) [optional]: the dimensions of the domain
-            - density (float) [optional]: the density of the particles within the domain
-            - num_particles (int) [optional]: how many particles are within the domain
-            - speed (float) [optional, default=1]: how fast the particles move
-            - noise_percentage (float) [optional, default=0]: how much environmental noise is present in the domain
+            - num_agents (int): how many agents are within the domain
+            - animal_type (Animal) [optional, default=Pigeon]: the type of animal
+            - domain_size (tuple of floats) [optional, default=(50,50)]: the dimensions of the domain
+            - weight_options (list of WeightOption) [optional, default=[]]: which weight options are active, i.e. which inputs will be considered by the neural network
             - num_generations (int) [optional, default=1000]: how many generations are generated and validated
             - num_iterations_per_individual (int) [optional, default=10]: how many times the simulation is run for every individual
-            - add_own_orientation (boolean) [optional, default=False]: should the particle's own orientation be considered (added to weights and orientations)
-            - add_random (boolean) [optional, default=False]: should a random value be considered (added to weights and orientations). Orientation value generated randomly at every timestep
-            - start_timestep_evaluation (int) [optional, default=0]: the first timestep for which the difference between expected and actual result should be computed
-            - changeover_point_timestep (int) [optional, default=0]: if we expect a change in the order, this indicated the timestep for that change
-            - start_order (int: 0 or 1) [optional]: the order at the start. If this is not set, half the simulation runs are started with an ordered starting condition and half with a disordered starting condition
-            - target_order (int: 0 or 1) [optional, default=1]: the expected order at the end
+            - use_norm (boolean) [optional, default=True]: whether the weights should be normalised
             - population_size (int) [optional, default=100]: how many individuals are generated per generation
             - bounds (list of 2 ints) [optional, default=[-1, 1]]: the bounds for the c_value generation
+            - update_to_zero_bounds (list of 2 floats) [optional, default=[0,0]]: within the given range, all weight values will be set to zero
+            - mutation_scale_factor (int) [optional, default=1]: the mutation scale factor
+            - crossover_rate (float) [optional, default=0.5]: the crossover rate
+            - early_stopping_after_gens (int) [optional, default=None]: stops the evolution after x number of generations without an improvement
+            - metric (Metrics) [optional, default=COHESION]: how the fitness should be evaluated
         """
 
         self.num_generations = num_generations
@@ -68,9 +70,15 @@ class DifferentialEvolution:
         self.output_size = 1
 
     def create_initial_population(self):
+        """
+        Creates the initial random population.
+        """
         return np.random.uniform(low=self.bounds[0], high=self.bounds[1], size=((self.population_size, self.weight_size)))
 
     def create_neural_network(self, weights):
+        """
+        Creates the neural network with fixed weights to be used to determine the head movement updates.
+        """
         nn = NeuralNetwork()
         fully_connected_layer = FullyConnectedLayer(input_size=self.weight_size, output_size=self.output_size)
         fully_connected_layer.set_weights(weights=weights)
@@ -79,6 +87,10 @@ class DifferentialEvolution:
         return nn
     
     def evaluate_result(self, result):
+        """
+        Evaluates the results according to the predefined metric. 
+        Returns the average of the evaluations across all timesteps.
+        """
         timestep_results = []
         for t in range(self.tmax):
             match self.metric:
@@ -93,6 +105,10 @@ class DifferentialEvolution:
         return np.average(timestep_results)
 
     def fitness_function(self, weights):
+        """
+        Evaluates the success of the individual by running the simulations and evaluating the results 
+        against the predefined metric. Returns the average fitness value across all runs.
+        """
         results = []
         weights = self.update_weights(weights)
         model = self.create_neural_network(weights=weights)
@@ -113,13 +129,22 @@ class DifferentialEvolution:
         return fitness
     
     def mutation(self, x, F):
+        """
+        Mutates an individual
+        """
         return x[0] + F * (x[1] - x[2])
     
     def check_bounds(self, mutated, bounds):
+        """
+        Makes sure that the mutated individual only has values within the bound.
+        """
         mutated_bound = np.clip(mutated, bounds[0], bounds[1])
         return mutated_bound
     
     def crossover(self, mutated, target, cr):
+        """
+        Performs the crossover operation.
+        """
         # generate a uniform random value for every dimension
         p = np.random.rand(self.weight_size)
         # generate trial vector by binomial crossover
@@ -127,12 +152,18 @@ class DifferentialEvolution:
         return np.array(trial)
     
     def update_weights(self, weights):
+        """
+        Updates the weights for the neural network.
+        """
         weights = np.where(((weights >= self.update_to_zero_bounds[0]) & (weights <= self.update_to_zero_bounds[1])), 0, weights)
         if self.use_norm == True:
             weights = normal.normalise(weights, norm='l1')
         return weights
     
     def plot_fitnesses(self, fitnesses, save_path_plots=None):
+        """
+        Plots the fitness values
+        """
         plt.plot(fitnesses)
         if save_path_plots:
             plt.savefig(f"{save_path_plots}.svg")
@@ -141,6 +172,9 @@ class DifferentialEvolution:
             plt.show()         
 
     def run(self, save_path_plots=None, save_path_log=None, log_depth='all'):
+        """
+        Performs the DE evolution for the weights.
+        """
         with open(f"{save_path_log}.csv", 'a', newline='') as log:
             w = csv.writer(log)
             headers = logger.create_headers(self.weight_options)

@@ -3,6 +3,12 @@ import numpy as np
 from animal_models.bird import Bird
 from animal_models.focus_area import FocusArea
 
+
+"""
+Class inheriting from Bird including the relevant data.
+"""
+
+
 NAME = "Zebra finch"
 AVERAGE_SPEED = 27 # m/s
 AVERAGE_SPEED = 0.27 # m/s

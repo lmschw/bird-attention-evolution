@@ -1,12 +1,22 @@
 import math
 import numpy as np
 
+"""
+Contains methods to convert angles and orientations
+"""
+
 def get_relative_positions(agents):
+    """
+    Returns the relative positions between all agents.
+    """
     x_diffs = agents[:,np.newaxis,0]-agents[:,0]    
     y_diffs = agents[:,np.newaxis,1]-agents[:,1]    
     return np.arctan2(y_diffs, x_diffs)
 
 def get_relative_positions_landmarks(agents, landmarks):
+    """
+    Returns the relative positions of the landmarks as viewed by the agents
+    """
     x_diffs = []
     y_diffs = []
     for agent_idx in range(len(agents)):
@@ -19,7 +29,10 @@ def get_relative_positions_landmarks(agents, landmarks):
         y_diffs.append(np.array(landmark_y_diffs).flatten())   
     return np.arctan2(y_diffs, x_diffs).T
 
-def get_relative_headings(agents):  
+def get_relative_headings(agents): 
+    """
+    Returns the relative orientations of the agents.
+    """ 
     return agents[:,np.newaxis,2]-agents[:,2]    
 
 def wrap_to_pi(x):
@@ -34,6 +47,9 @@ def wrap_to_pi(x):
     return x
 
 def wrap_angle_to_pi(x):
+    """
+    Wraps a single angle to [-pi, pi]
+    """
     if x < 0:
         x += 2 * np.pi
     x = x % (2*np.pi)
@@ -42,6 +58,9 @@ def wrap_angle_to_pi(x):
     return x
 
 def wrap_to_2_pi(x):
+    """
+    Wraps the angle(s) to [0, 2pi]
+    """
     return (2*np.pi*x) % (2*np.pi)
 
 def compute_u_v_coordinates_for_angles(angles):
@@ -71,13 +90,3 @@ def compute_angles_for_orientations(orientations):
         A float representin the angle in radians.
     """
     return np.arctan2(orientations[:, 1], orientations[:, 0])
-
-if __name__ == "__main__":
-    x = np.array([ 1,  2,  3])
-    y = np.array([1, 2, 3])
-    h = np.array([np.pi, 0.5*np.pi, 1.5*np.pi])
-
-    agents = np.column_stack([x, y, h])
-
-    print(get_relative_positions(agents=agents))
-    print(get_relative_headings(agents=agents))

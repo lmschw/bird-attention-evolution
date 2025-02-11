@@ -4,6 +4,13 @@ import matplotlib.patches as mpatches
 from shapely import centroid
 from shapely.geometry import Polygon, Point
 
+"""
+Represents a landmark, e.g. a tree, house etc.. 
+
+Attributes:
+id          -   string                                                          -   the ID of the landmark, mostly intended for printing, displaying and saving
+corners     -   list of lists representing the corner points of the polygon     -   defines the corners of the polygon representing the shape of the landmark
+"""
     
 class Landmark:
     def __init__(self, id, corners):

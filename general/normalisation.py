@@ -1,6 +1,9 @@
 from sklearn import preprocessing
 import numpy as np
 
+"""
+Contains methods for normalisations
+"""
 
 def normalise(values, norm='l1', axis=1):
     """

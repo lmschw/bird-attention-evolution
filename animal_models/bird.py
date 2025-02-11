@@ -1,5 +1,9 @@
 from animal_models.animal import Animal
 
+"""
+The base class for all species of birds, e.g. pigeons and hawks.
+Attributes are described in the parent class. Wingspan is the width of the bird.
+"""
 
 class Bird(Animal):
     # TODO implement flapping frequency and energy level

@@ -8,7 +8,9 @@ from animal_models.pigeon import Pigeon
 from animal_models.focus_area import FocusArea
 import general.normalisation as normal
 import general.angle_conversion as ac
-import simulator.weight_options as wo
+import simulator.head_movement.weight_options as wo
+
+from simulator.base_simulator import BaseSimulator
 
 """
 Implementation of the orientation-perception-free zone model with landmarks.
@@ -16,7 +18,7 @@ Implementation of the orientation-perception-free zone model with landmarks.
 
 DIST_MOD = 0.001
 
-class OrientationPerceptionFreeZoneModelSimulator:
+class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
     def __init__(self, num_agents, animal_type, domain_size, start_position, landmarks=[],
                  noise_amplitude=0, social_weight=1, environment_weight=1, limit_turns=True, 
                  use_distant_dependent_zone_factors=True, weight_options=[], model=None, 
@@ -43,11 +45,14 @@ class OrientationPerceptionFreeZoneModelSimulator:
             - follow (boolean) [optional, default=True]: whether the visualization should follow the centroid of the swarm or whether it should show the whole domain
             - graph_freq (int) [optional, default=5]: how often the visualization should be updated
         """
-        self.num_agents = num_agents
-        self.animal_type = animal_type
-        self.domain_size = domain_size
-        self.start_position = start_position
-        self.noise_amplitude = noise_amplitude
+        super().__init__(animal_type=animal_type,
+                    num_agents=num_agents,
+                    domain_size=domain_size,
+                    start_position=start_position,
+                    noise_amplitude=noise_amplitude,
+                    visualize=visualize,
+                    follow=follow,
+                    graph_freq=graph_freq)
         self.landmarks = landmarks
         self.social_weight = social_weight,
         self.environment_weight = environment_weight
@@ -56,59 +61,14 @@ class OrientationPerceptionFreeZoneModelSimulator:
         self.weight_options = weight_options
         self.model = model
         self.single_speed = single_speed
-        self.visualize = visualize
         self.visualize_vision_fields = visualize_vision_fields
         self.visualize_head_direction = visualize_head_direction
-        self.follow = follow
-        self.graph_freq = graph_freq
-        self.centroid_trajectory = []
-
-    def initialize(self):
-        """
-        Initialises the agents, domain and field of vision.
-        """
-        agents = self.init_agents()
-
-        # Setup graph
-        self.fig, self.ax = plt.subplots()
-        self.ax.set_facecolor((0, 0, 0))  
-        centroid_x, centroid_y = np.mean(agents[:, 0]), np.mean(agents[:, 1])
-        if self.follow:
-            self.ax.set_xlim(centroid_x - 7.5, centroid_x + 7.5)
-            self.ax.set_ylim(centroid_y - 7.5, centroid_y + 7.5)
-        else:
-            self.ax.set_xlim(0, self.domain_size[0])
-            self.ax.set_ylim(0, self.domain_size[1])
-
-        return agents
 
     def init_agents(self):
-        """
-        Initialises the agents (positions and orientations).
-        """
-        rng = np.random
-        n_points_x = int(np.ceil(np.sqrt(self.num_agents)))
-        n_points_y = int(np.ceil(np.sqrt(self.num_agents)))
-        spacing = np.average(self.animal_type.preferred_distance_left_right)
-        init_x = 0
-        init_y = 0
-
-        x_values = np.linspace(init_x, init_x + (n_points_x - 1) * spacing, n_points_x)
-        y_values = np.linspace(init_y, init_y + (n_points_y - 1) * spacing, n_points_y)
-        xx, yy = np.meshgrid(x_values, y_values)
-
-        pos_xs = self.start_position[0] + xx.ravel() + (rng.random(n_points_x * n_points_y) * spacing * 0.5) - spacing * 0.25
-        pos_ys = self.start_position[1] + yy.ravel() + (rng.random(n_points_x * n_points_y) * spacing * 0.5) - spacing * 0.25
-        pos_hs = (rng.random(n_points_x * n_points_x) * 2 * np.pi) - np.pi
-
-        indices = np.random.choice(range(len(pos_xs)), self.num_agents, replace=False)
-        pos_xs = pos_xs[indices]
-        pos_ys = pos_ys[indices]
-        pos_hs = pos_hs[indices]
-        
-        num_agents = len(pos_xs)
-        self.num_agents = num_agents
-
+        base = super().init_agents()
+        pos_xs = base[:,0]
+        pos_ys = base[:,1]
+        pos_hs = base[:,2]
         if self.single_speed:
             speeds = np.full(self.num_agents, self.animal_type.speeds[1])
         else:
@@ -350,12 +310,6 @@ class OrientationPerceptionFreeZoneModelSimulator:
         side_factors = self.compute_side_factors(angles, shape=(self.num_agents, len(self.landmarks)))
         vision_strengths = self.compute_vision_strengths(head_orientations=agents[:,4], distances=distances, angles=angles, shape=(self.num_agents, len(self.landmarks)))
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
-    
-    def generate_noise(self):
-        """
-        Generates noise.
-        """
-        return np.random.normal(scale=self.noise_amplitude, size=self.num_agents)
     
     def compute_delta_orientations(self, agents):
         """

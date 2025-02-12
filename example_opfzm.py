@@ -1,7 +1,7 @@
 import numpy as np
 
 from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator
-from simulator.enum_weight_options import WeightOptions
+from simulator.head_movement.enum_weight_options import WeightOptions
 from animal_models.pigeon import Pigeon
 from animal_models.zebrafinch import Zebrafinch
 from area_models.landmark import Landmark

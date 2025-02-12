@@ -1,5 +1,5 @@
 import numpy as np
-from simulator.enum_weight_options import WeightOptions
+from simulator.head_movement.enum_weight_options import WeightOptions
 
 """
 Describes the type of input data to the neural network updating the head direction.

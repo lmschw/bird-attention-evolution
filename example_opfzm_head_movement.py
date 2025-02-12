@@ -1,6 +1,6 @@
 import numpy as np
 
-from simulator.enum_weight_options import WeightOptions
+from simulator.head_movement.enum_weight_options import WeightOptions
 from animal_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 

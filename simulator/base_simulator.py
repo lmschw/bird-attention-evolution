@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import general.angle_conversion as ac
 
 class BaseSimulator:
-    def __init__(self, animal_type, num_agents, domain_size, start_position, noise_amplitude=0, visualize=True, follow=True, graph_freq=5):
+    def __init__(self, animal_type, num_agents, domain_size, start_position, noise_amplitude=0, 
+                 landmarks=[], visualize=True, follow=True, graph_freq=5):
         """
         Params:
             - animal_type (Animal): the type of animal
@@ -22,6 +23,7 @@ class BaseSimulator:
         self.domain_size = domain_size
         self.start_position = start_position
         self.noise_amplitude = noise_amplitude
+        self.landmarks = landmarks
         self.visualize = visualize
         self.follow = follow
         self.graph_freq = graph_freq
@@ -85,6 +87,10 @@ class BaseSimulator:
         Redraws the visualization for the current positions and orientations of the agents.
         """
         self.ax.clear()
+
+        for landmark in self.landmarks:
+            self.ax.add_patch(landmark.get_patch_for_display())
+            self.ax.annotate(landmark.id, landmark.get_annotation_point(), color="white")
 
         self.ax.scatter(self.curr_agents[:, 0], self.curr_agents[:, 1], color="white", s=15)
         self.ax.quiver(self.curr_agents[:, 0], self.curr_agents[:, 1],

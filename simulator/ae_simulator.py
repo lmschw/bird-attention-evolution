@@ -30,7 +30,8 @@ An implementation of Active Elastic
 """
 
 class ActiveElasticSimulator(BaseSimulator):
-    def __init__(self, animal_type, num_agents, domain_size, start_position, visualize=True, follow=True, graph_freq=5):
+    def __init__(self, animal_type, num_agents, domain_size, start_position, 
+                 landmarks=[], visualize=True, follow=True, graph_freq=5):
         """
         Params:
             - animal_type (Animal): the type of animal
@@ -45,6 +46,7 @@ class ActiveElasticSimulator(BaseSimulator):
                          num_agents=num_agents,
                          domain_size=domain_size,
                          start_position=start_position,
+                         landmarks=landmarks,
                          visualize=visualize,
                          follow=follow,
                          graph_freq=graph_freq)

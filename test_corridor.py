@@ -7,12 +7,12 @@ import loggers.logger_agents as logger
 import loggers.logger_model_params as logger_params
 
 n_agents = 7
-n_steps = 1000
+n_steps = 5000
 domain_size = (300, 100)
 noise_amplitude = 0.2
 start_position = (25, 20)
 graph_freq = 10
-visualize = True
+visualize = False
 visualize_vision_fields = 0
 follow = False
 single_speed = True
@@ -29,8 +29,8 @@ other_type_weight = None
 
 border = Landmark('', corners=[[1,1], [1, 99], [299, 99], [299,1], [1,1], [0,0], [300, 0], [300, 100], [0,100], [0,0]])
 
-landmark_1 = Landmark('2', corners=[[100, 30], [100, 65], [150, 65], [150, 35]])
-landmark_2 = Landmark('1', corners=[[100, 0], [100, 25], [150, 25], [150, 0]])
+landmark_1 = Landmark('1', corners=[[100, 0], [100, 25], [150, 25], [150, 0]])
+landmark_2 = Landmark('2', corners=[[100, 30], [100, 65], [150, 65], [150, 35]])
 landmark_3 = Landmark('3', corners=[[100, 70], [100, 100], [150, 100], [150, 75]])
 
 
@@ -59,22 +59,22 @@ logger_params.log_model_params(model_params_dict=model_params, save_path=save_pa
 logger.initialise_log_file_with_headers(['iter', 't', 'i', 'x', 'y', 'h'], save_path=save_path_agents)
 logger.initialise_log_file_with_headers(['iter', 't', 'x', 'y'], save_path=save_path_centroid)
 
-iter = 0
-sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
-                      animal_type=animal_type,
-                      domain_size=domain_size,
-                      start_position=start_position,
-                      use_distant_dependent_zone_factors=dist_based_zone_factors,
-                      landmarks=landmarks,
-                      social_weight=social_weight,
-                      environment_weight=environment_weight,
-                      single_speed=single_speed,
-                      visualize=visualize,
-                      visualize_vision_fields=visualize_vision_fields,
-                      follow=follow,
-                      graph_freq=graph_freq,
-                      save_path_agents=save_path_agents,
-                      save_path_centroid=save_path_centroid,
-                      iter=iter)
-sim.run(tmax=n_steps)
+for iter in range(100):
+    sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
+                        animal_type=animal_type,
+                        domain_size=domain_size,
+                        start_position=start_position,
+                        use_distant_dependent_zone_factors=dist_based_zone_factors,
+                        landmarks=landmarks,
+                        social_weight=social_weight,
+                        environment_weight=environment_weight,
+                        single_speed=single_speed,
+                        visualize=visualize,
+                        visualize_vision_fields=visualize_vision_fields,
+                        follow=follow,
+                        graph_freq=graph_freq,
+                        save_path_agents=save_path_agents,
+                        save_path_centroid=save_path_centroid,
+                        iter=iter)
+    sim.run(tmax=n_steps)
 

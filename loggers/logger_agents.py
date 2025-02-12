@@ -1,5 +1,6 @@
 import csv, os
 import numpy as np
+import pandas as pd
 
 """
 Service containing methods to do with logging.
@@ -45,6 +46,21 @@ def log_results_to_csv(dict_list, save_path):
         w = csv.writer(f)
         for dict in dict_list:
             w.writerow(dict.values())
+
+def load_log_data(filepath, max_iters=None):
+    df = pd.read_csv(filepath)
+    max_iter = min(df['iter'].max(),max_iters)
+    data = []
+    for iter in range(max_iter):
+        print(f"loading data for iter {iter+1}/{max_iter}")
+        data_iter = []
+        df_iter = df[df['iter'] == iter]
+        tmax = df_iter['t'].max()
+        for t in range(tmax):
+            df_t = df_iter[df_iter['t'] == t]
+            data_iter.append(np.column_stack((df_t['x'], df_t['y'], df_t['h'])))
+        data.append(data_iter)
+    return data
 
 def delete_csv_file(filepath):
     if(os.path.exists(filepath) and os.path.isfile(filepath)):

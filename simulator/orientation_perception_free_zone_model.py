@@ -14,6 +14,8 @@ from simulator.base_simulator import BaseSimulator
 Implementation of the orientation-perception-free zone model with landmarks.
 """
 
+REPULSION_FACTOR = 1
+
 class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
     def __init__(self, num_agents, animal_type, domain_size, start_position, landmarks=[],
                  noise_amplitude=0, social_weight=1, environment_weight=1, limit_turns=True, 
@@ -121,6 +123,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
             self.ax.set_ylim(0, self.domain_size[1])
 
         plt.pause(0.000001)
+        #plt.pause(0.5)
 
     def save(self, t, agents):
         if self.save_path_agents:
@@ -205,7 +208,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
             rep_factors = -(1/distances) # stronger repulsion the closer the other is
             att_factors = 1-(1/distances) # stronger attration the farther away the other is
         else:
-            rep_factors = np.full(self.num_agents, -1)
+            rep_factors = np.full(self.num_agents, -REPULSION_FACTOR)
             att_factors = np.ones(self.num_agents)
 
         match_factors = np.where(repulsion_zone, rep_factors, match_factors)
@@ -222,7 +225,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         if self.use_distant_dependent_zone_factors:
             rep_factors = -(1/distances) # stronger repulsion the closer the other is
         else:
-            rep_factors = np.full(self.num_agents, -1)
+            rep_factors = np.full(self.num_agents, -REPULSION_FACTOR)
         match_factors = np.where(repulsion_zone, rep_factors, match_factors)
         return match_factors
     
@@ -278,8 +281,8 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
             delta_orientations_landmarks = 0
         #print(delta_orientations_landmarks)
         delta_orientations = self.social_weight * delta_orientations_conspecifics + self.environment_weight * delta_orientations_landmarks
-        delta_orientations = np.where((delta_orientations > self.animal_type.max_turn_angle), self.animal_type.max_turn_angle, delta_orientations)
-        delta_orientations = np.where((delta_orientations < -self.animal_type.max_turn_angle), -self.animal_type.max_turn_angle, delta_orientations)
+        #delta_orientations = np.where((delta_orientations > self.animal_type.max_turn_angle), self.animal_type.max_turn_angle, delta_orientations)
+        #delta_orientations = np.where((delta_orientations < -self.animal_type.max_turn_angle), -self.animal_type.max_turn_angle, delta_orientations)
         return delta_orientations, distances, angles, vision_strengths
 
     def compute_new_orientations(self, agents):

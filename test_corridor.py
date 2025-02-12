@@ -1,19 +1,15 @@
+import numpy as np
+
 from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator
-from simulator.ae_simulator import ActiveElasticSimulator
-from simulator.ae_simulator_with_perception_strength import ActiveElasticWithPerceptionStrengthSimulator
-from simulator.couzin_simulator import CouzinZoneModelSimulator
-from simulator.couzin_with_perception_strength_simulator import CouzinZoneModelWithPerceptionStrengthSimulator
-from simulator.vicsek_simulator import VicsekSimulator
-from simulator.vicsek_with_perception_strength_simulator import VicsekWithPerceptionStrengthSimulator
 from animal_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 import loggers.logger_agents as logger
 import loggers.logger_model_params as logger_params
 
 n_agents = 7
-n_steps = 10000
-domain_size = (50, 50)
-noise_amplitude = 0
+n_steps = 1000
+domain_size = (300, 100)
+noise_amplitude = 0.2
 start_position = (25, 20)
 graph_freq = 10
 visualize = True
@@ -21,20 +17,24 @@ visualize_vision_fields = 0
 follow = False
 single_speed = True
 animal_type = Pigeon()
-start_position = (10, 10)
+
+y = np.random.randint(30, 60)
+start_position = (10, y)
 
 dist_based_zone_factors = True
 
-social_weight = 0.5
-environment_weight = 0.5
+social_weight = 0.25
+environment_weight = 0.75
 other_type_weight = None
 
-landmark_1 = Landmark('1', corners=[[20, 10], [20, 15], [25, 15], [25, 10]])
-landmark_2 = Landmark('2', corners=[[20, 0], [20, 5], [25, 5], [25, 0]])
-landmark_3 = Landmark('3', corners=[[20, 20], [20, 25], [25, 25], [25, 20]])
+border = Landmark('', corners=[[1,1], [1, 99], [299, 99], [299,1], [1,1], [0,0], [300, 0], [300, 100], [0,100], [0,0]])
+
+landmark_1 = Landmark('2', corners=[[100, 30], [100, 65], [150, 65], [150, 35]])
+landmark_2 = Landmark('1', corners=[[100, 0], [100, 25], [150, 25], [150, 0]])
+landmark_3 = Landmark('3', corners=[[100, 70], [100, 100], [150, 100], [150, 75]])
 
 
-landmarks = [landmark_1, landmark_2, landmark_3]
+landmarks = [border, landmark_1, landmark_2, landmark_3]
 
 base_save_path = "navigation_through_narrow_hole"
 save_path_params = f"log_params_{base_save_path}.csv"

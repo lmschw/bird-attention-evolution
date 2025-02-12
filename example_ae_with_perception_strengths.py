@@ -2,7 +2,6 @@ from animal_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 from simulator.ae_simulator_with_perception_strength import ActiveElasticWithPerceptionStrengthSimulator
 
-
 n_agents = 10
 n_steps = 10000
 domain_size = (50, 50)

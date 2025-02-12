@@ -150,7 +150,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         """
         for i in range(visualize_vision_fields):
             for focus_area in animal_type.focus_areas:
-                focus_angle = agents[i,2] + agents[i,4] + focus_area.azimuth_angle_position_horizontal + 2 * np.pi
+                focus_angle = agents[i,2] + focus_area.azimuth_angle_position_horizontal + 2 * np.pi
                 start_angle = np.rad2deg(focus_angle - focus_area.angle_field_horizontal) 
                 end_angle = np.rad2deg(focus_angle + focus_area.angle_field_horizontal) 
                 if focus_area.comfortable_distance[1] == np.inf:

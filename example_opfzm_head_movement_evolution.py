@@ -4,7 +4,7 @@ from simulator.head_movement.enum_weight_options import WeightOptions
 from animal_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 
-from genetic.genetic_algorithm_ae import DifferentialEvolution
+from genetic.genetic_algorithm_opfzm import DifferentialEvolution
 from genetic.metrics import Metrics
 
 import loggers.logger as logger
@@ -18,7 +18,7 @@ weight_options = [WeightOptions.CLOSEST_DISTANCES,
                   WeightOptions.NUM_VISIBLE_AGENTS,
                   WeightOptions.PREVIOUS_HEAD_ANGLES,
                   WeightOptions.AVG_PERCEPTION_STRENGTHS]
-weight_size = len(weight_options)
+len_weights = len(weight_options)
 
 n_agents = 7
 n_steps = 10000
@@ -51,7 +51,7 @@ model_params = {'num_agents': n_agents,
                 'weight_options': [option.value for option in weight_options],
                 'metric': metric.value}
 
-postfix = f"_test_ae_tmax={n_steps}_n={n_agents}_bt={animal_type.name}_domain={domain_size}_m={metric.value}"
+postfix = f"_test_tmax={n_steps}_n={n_agents}_bt={animal_type.name}_domain={domain_size}_m={metric.value}"
 save_path_best = f"best{postfix}.csv"
 save_path_best_normalised = f"best{postfix}_normalised.csv"
 save_path_general = f"all{postfix}"

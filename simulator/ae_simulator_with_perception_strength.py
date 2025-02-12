@@ -82,7 +82,7 @@ class ActiveElasticWithPerceptionStrengthSimulator(ActiveElasticSimulator):
         Computes the force components.
         """
         dists_conspecifics, angles_conspecifics = self.compute_distances_and_angles()
-        perception_strengths_conspecifics, min_agent = pstrength.compute_perception_strengths(angles_conspecifics, dists_conspecifics, self.animal_type)
+        perception_strengths_conspecifics = pstrength.compute_perception_strengths(distances=dists_conspecifics, angles=angles_conspecifics, shape=(self.num_agents, self.num_agents), animal_type=self.animal_type)
 
         p_x, p_y = self.get_pi_elements(distances_conspecifics=dists_conspecifics,
                                         angles_conspecifics=angles_conspecifics,

@@ -46,7 +46,7 @@ class VicsekWithPerceptionStrengthSimulator(VicsekSimulator):
         Computes the new orientations for all agents.
         """
         dists_conspecifics, angles_conspecifics = self.compute_distances_and_angles()
-        perception_strengths_conspecifics, min_agent = pstrength.compute_perception_strengths(angles_conspecifics, dists_conspecifics, self.animal_type)
+        perception_strengths_conspecifics = pstrength.compute_perception_strengths(distances=dists_conspecifics, angles=angles_conspecifics, shape=(self.num_agents, self.num_agents), animal_type=self.animal_type)
         orientations_grid = np.concatenate([[orientations]]*len(orientations))
         orientations_grid = np.where(neighbours, orientations_grid, 0)
         orientations_grid = orientations_grid * perception_strengths_conspecifics

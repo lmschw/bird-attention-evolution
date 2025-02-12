@@ -94,7 +94,7 @@ class CouzinZoneModelWithPerceptionStrengthSimulator(CouzinZoneModelSimulator):
         aligned = self.get_alignment_neighbours(distances=distances)
         attracted = self.get_attraction_neighbours(distances=distances)
 
-        perception_strengths, min_agent = pstrength.compute_perception_strengths(angles, distances, self.animal_type)
+        perception_strengths = pstrength.compute_perception_strengths(distances=distances, angles=angles, shape=(self.num_agents, self.num_agents), animal_type=self.animal_type)
         perception_strengths = np.repeat(perception_strengths[:,:, np.newaxis], 2, axis=2)
 
         repulsion_orientations = self.get_repulsion_orientations(positions=positions, neighbours=repulsed, perception_strengths=perception_strengths)

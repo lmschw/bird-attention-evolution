@@ -1,16 +1,26 @@
 import numpy as np
 
+from simulator.head_movement.orientation_perception_free_zone_model_with_head_movement import OrientationPerceptionFreeZoneModelWithHeadMovementSimulator
 from simulator.head_movement.enum_weight_options import WeightOptions
 from animal_models.pigeon import Pigeon
+from animal_models.zebrafinch import Zebrafinch
 from area_models.landmark import Landmark
 
-from genetic.genetic_algorithm_opfzm import DifferentialEvolution
-from genetic.metrics import Metrics
+from neural_network.activation_layer import ActivationLayer
+from neural_network.fully_connected_layer import FullyConnectedLayer
+from neural_network.neural_network import NeuralNetwork
+import neural_network.activation_functions as snn
 
-import loggers.logger as logger
-import loggers.logger_model_params as logger_params
-import general.normalisation as normal
-
+"""
+weight_options = [WeightOptions.CLOSEST_DISTANCES, 
+                  WeightOptions.AVG_BEARINGS, 
+                  WeightOptions.NUM_VISIBLE_AGENTS,
+                  WeightOptions.PREVIOUS_HEAD_ANGLES]
+# closest distance, average bearings, num visible agents, previous head angle
+weights = [0.24373, 0.90672, 1.,      0.31082]
+weights = [0.52398, 0.70982, 0.98804, 0.50911]
+weights = [0,0,0,0]
+"""
 weight_options = [WeightOptions.CLOSEST_DISTANCES,
                   WeightOptions.CLOSEST_BEARINGS,
                   WeightOptions.AVG_DISTANCES,
@@ -18,69 +28,58 @@ weight_options = [WeightOptions.CLOSEST_DISTANCES,
                   WeightOptions.NUM_VISIBLE_AGENTS,
                   WeightOptions.PREVIOUS_HEAD_ANGLES,
                   WeightOptions.AVG_PERCEPTION_STRENGTHS]
-len_weights = len(weight_options)
+weight_size = len(weight_options)
+output_size = 1
+
+weights = [0, 0, 0, 0, 0, 0, 0]
+
+nn = NeuralNetwork()
+fully_connected_layer = FullyConnectedLayer(input_size=weight_size, output_size=output_size)
+fully_connected_layer.set_weights(weights=weights)
+nn.add(fully_connected_layer)
+nn.add(ActivationLayer(activation=snn.tanh, activation_prime=snn.tanh_prime))
 
 n_agents = 7
 n_steps = 10000
-domain_size = (50, 50)
-start_position = (25, 25)
+domain_size = (500, 500)
+noise_amplitude = 0
+start_position = (250, 20)
 graph_freq = 10
 visualize = True
-visualize_vision_fields = 1
+visualize_vision_fields = 0
+visualize_head_directions = False
 follow = True
 single_speed = True
 animal_type = Pigeon()
-start_position = (0, 0)
+start_position = (10, 10)
 
-social_weight = 1
-path_weight = 0
+dist_based_zone_factors = True
 
-num_iters = 25
-num_gens = 30
-num_ind = 10
-use_norm = True
-pop_size = 30
-bounds = [0,1]
-metric = Metrics.COHESION
+social_weight = 0.5
+environment_weight = 0
 
-model_params = {'num_agents': n_agents,
-                'tmax': n_steps,
-                'domain_size': domain_size,
-                'start_position': start_position,
-                'social_weight': social_weight,
-                'weight_options': [option.value for option in weight_options],
-                'metric': metric.value}
-
-postfix = f"_test_tmax={n_steps}_n={n_agents}_bt={animal_type.name}_domain={domain_size}_m={metric.value}"
-save_path_best = f"best{postfix}.csv"
-save_path_best_normalised = f"best{postfix}_normalised.csv"
-save_path_general = f"all{postfix}"
-save_path_plot = f"plot{postfix}"
-save_path_model_params = f"model_params{postfix}"
-
-logger_params.log_model_params(model_params_dict=model_params, save_path=save_path_model_params)
-
-logger.initialise_log_file_with_headers(logger.create_headers(weight_options=weight_options, is_best=True), save_path=save_path_best)
-logger.initialise_log_file_with_headers(logger.create_headers(weight_options=weight_options, is_best=True), save_path=save_path_best_normalised)
-
-for i in range(num_iters):
-
-    evo = DifferentialEvolution(tmax=n_steps,
-                            num_agents=n_agents,
-                            animal_type=animal_type,
-                            domain_size=domain_size,
-                            weight_options=weight_options,
-                            num_generations=num_gens,
-                            num_iterations_per_individual=num_ind,
-                            use_norm=use_norm,
-                            population_size=pop_size,
-                            bounds=bounds,
-                            metric=metric)
-
-    best = evo.run(save_path_log=save_path_general, save_path_plots=save_path_plot)
-    print(f"BEST overall: {best}")
+landmark_1 = Landmark('1', corners=[[20, 10], [20, 15], [25, 15], [25, 10]])
+landmark_2 = Landmark('2', corners=[[20, 0], [20, 5], [25, 5], [25, 0]])
+landmark_3 = Landmark('3', corners=[[20, 20], [20, 25], [25, 25], [25, 20]])
 
 
-    logger.log_results_to_csv([{'iter': i, 'individual': np.array(best[0]), 'fitness': best[1]}], prepare=True, save_path=save_path_best)
-    logger.log_results_to_csv([{'iter': i, 'individual': normal.normalise(np.array(best[0])), 'fitness': best[1]}], prepare=True, save_path=save_path_best_normalised)
+landmarks = [landmark_1, landmark_2, landmark_3]
+
+sim = OrientationPerceptionFreeZoneModelWithHeadMovementSimulator(num_agents=n_agents,
+                      animal_type=animal_type,
+                      domain_size=domain_size,
+                      start_position=start_position,
+                      use_distant_dependent_zone_factors=dist_based_zone_factors,
+                      weight_options=weight_options,
+                      model=nn,
+                      landmarks=landmarks,
+                      social_weight=social_weight,
+                      environment_weight=environment_weight,
+                      single_speed=single_speed,
+                      visualize=visualize,
+                      visualize_vision_fields=visualize_vision_fields,
+                      visualize_head_direction=visualize_head_directions,
+                      follow=follow,
+                      graph_freq=graph_freq)
+sim.run(tmax=n_steps)
 

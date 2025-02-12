@@ -105,8 +105,8 @@ class BaseSimulator:
             self.ax.set_xlim(centroid_x-10, centroid_x+10)
             self.ax.set_ylim(centroid_y-10, centroid_y+10)
         else:
-            self.ax.set_xlim(-self.domain_size, self.domain_size)
-            self.ax.set_ylim(-self.domain_size, self.domain_size)
+            self.ax.set_xlim(0, self.domain_size[0])
+            self.ax.set_ylim(0, self.domain_size[1])
 
         plt.pause(0.000001)
 

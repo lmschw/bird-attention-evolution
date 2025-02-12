@@ -6,6 +6,7 @@ from shapely import Point
 
 import general.angle_conversion as ac
 import vision.perception_strength as pstrength
+import loggers.logger_agents as logger
 
 from simulator.base_simulator import BaseSimulator
 
@@ -17,7 +18,8 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
     def __init__(self, num_agents, animal_type, domain_size, start_position, landmarks=[],
                  noise_amplitude=0, social_weight=1, environment_weight=1, limit_turns=True, 
                  use_distant_dependent_zone_factors=True, single_speed=True, visualize=True, 
-                 visualize_vision_fields=0, follow=False, graph_freq=5):
+                 visualize_vision_fields=0, follow=False, graph_freq=5, save_path_agents=None, 
+                 save_path_centroid=None, iter=0):
         """
         Params:
             - num_agents (int): the number of animals within the domain
@@ -51,6 +53,9 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         self.use_distant_dependent_zone_factors = use_distant_dependent_zone_factors
         self.single_speed = single_speed
         self.visualize_vision_fields = visualize_vision_fields
+        self.save_path_agents = save_path_agents
+        self.save_path_centroid = save_path_centroid
+        self.iter = iter
 
     def init_agents(self):
         base = super().init_agents()
@@ -116,6 +121,14 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
             self.ax.set_ylim(0, self.domain_size[1])
 
         plt.pause(0.000001)
+
+    def save(self, t, agents):
+        if self.save_path_agents:
+            dict_list = logger.create_dicts(iter=self.iter, t=t, agents=agents)
+            logger.log_results_to_csv(dict_list=dict_list, save_path=self.save_path_agents)
+        if self.save_path_centroid:
+            dict = logger.create_centroid_dict(iter=self.iter, t=t, centroid=self.centroid_trajectory[-1])
+            logger.log_results_to_csv([dict], save_path=self.save_path_centroid)
 
     def compute_distances_and_angles(self, headings, xx1, xx2, yy1, yy2, transpose_for_angles=False):
         """
@@ -300,16 +313,21 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         for t in range(tmax):
             self.current_step = t
 
-            self.agents = agents
-
             agents[:,0], agents[:,1] = self.compute_new_positions(agents=agents)
-            self.agents = agents
             agents[:,2] = self.compute_new_orientations(agents=agents)
+            self.curr_agents = agents
+
+            self.states.append(self.curr_agents.copy())
+            centroid_x, centroid_y = np.mean(self.curr_agents[:, 0]), np.mean(self.curr_agents[:, 1])
+            self.centroid_trajectory.append((centroid_x, centroid_y))
 
             if not (self.current_step % self.graph_freq) and self.visualize and self.current_step > 0:
                 self.graph_agents(agents=agents)
 
             agent_history.append(agents)
+
+            if self.save_path_agents or self.save_path_centroid:
+                self.save(t=t, agents=agents)
             
         plt.close()
         return np.array(agent_history)

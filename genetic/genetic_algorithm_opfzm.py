@@ -10,7 +10,7 @@ import neural_network.activation_functions as snn
 from genetic.metrics import Metrics
 import genetic.metrics_functions as metfunc
 import general.normalisation as normal
-import loggers.logger as logger
+import loggers.logger_evolution as logger_evolution
 
 from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator
 from animal_models.pigeon import Pigeon
@@ -176,7 +176,7 @@ class DifferentialEvolution:
         """
         with open(f"{save_path_log}.csv", 'a', newline='') as log:
             w = csv.writer(log)
-            headers = logger.create_headers(self.weight_options)
+            headers = logger_evolution.create_headers(self.weight_options)
             w.writerow(headers)
             log.flush()
             population  = self.create_initial_population()
@@ -187,9 +187,9 @@ class DifferentialEvolution:
             best_fitnesses_for_generations = [best_fitness]
             # saving the fitnesses
             if log_depth == 'all':
-                log_dict_list = logger.create_dicts_for_logging(-1, population, fitnesses)
+                log_dict_list = logger_evolution.create_dicts_for_logging(-1, population, fitnesses)
             else:
-                log_dict_list = logger.create_dicts_for_logging(-1, [best_individual], [best_fitness])
+                log_dict_list = logger_evolution.create_dicts_for_logging(-1, [best_individual], [best_fitness])
             for dict in log_dict_list:
                 w.writerow(dict.values())
             log.flush()
@@ -215,9 +215,9 @@ class DifferentialEvolution:
                     print('Iteration: %d f([%s]) = %.5f' % (iter, np.around(best_individual, decimals=5), best_fitness))
                 # saving the fitnesses
                 if log_depth == 'all':
-                    log_dict_list = logger.create_dicts_for_logging(iter, population, fitnesses)
+                    log_dict_list = logger_evolution.create_dicts_for_logging(iter, population, fitnesses)
                 else:
-                    log_dict_list = logger.create_dicts_for_logging(iter, [best_individual], [best_fitness])
+                    log_dict_list = logger_evolution.create_dicts_for_logging(iter, [best_individual], [best_fitness])
                 for dict in log_dict_list:
                     w.writerow(dict.values())
                 log.flush()

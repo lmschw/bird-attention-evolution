@@ -6,7 +6,7 @@ from animal_models.pigeon import Pigeon
 from genetic.genetic_algorithm_opfzm import DifferentialEvolution
 from genetic.metrics import Metrics
 
-import loggers.logger as logger
+import loggers.logger_evolution as logger_evolution
 import loggers.logger_model_params as logger_params
 import general.normalisation as normal
 
@@ -59,8 +59,8 @@ save_path_model_params = f"model_params{postfix}"
 
 logger_params.log_model_params(model_params_dict=model_params, save_path=save_path_model_params)
 
-logger.initialise_log_file_with_headers(logger.create_headers(weight_options=weight_options, is_best=True), save_path=save_path_best)
-logger.initialise_log_file_with_headers(logger.create_headers(weight_options=weight_options, is_best=True), save_path=save_path_best_normalised)
+logger_evolution.initialise_log_file_with_headers(logger_evolution.create_headers(weight_options=weight_options, is_best=True), save_path=save_path_best)
+logger_evolution.initialise_log_file_with_headers(logger_evolution.create_headers(weight_options=weight_options, is_best=True), save_path=save_path_best_normalised)
 
 for i in range(num_iters):
 
@@ -80,6 +80,6 @@ for i in range(num_iters):
     print(f"BEST overall: {best}")
 
 
-    logger.log_results_to_csv([{'iter': i, 'individual': np.array(best[0]), 'fitness': best[1]}], prepare=True, save_path=save_path_best)
-    logger.log_results_to_csv([{'iter': i, 'individual': normal.normalise(np.array(best[0])), 'fitness': best[1]}], prepare=True, save_path=save_path_best_normalised)
+    logger_evolution.log_results_to_csv([{'iter': i, 'individual': np.array(best[0]), 'fitness': best[1]}], prepare=True, save_path=save_path_best)
+    logger_evolution.log_results_to_csv([{'iter': i, 'individual': normal.normalise(np.array(best[0])), 'fitness': best[1]}], prepare=True, save_path=save_path_best_normalised)
 

@@ -3,7 +3,6 @@ import numpy as np
 from simulator.head_movement.orientation_perception_free_zone_model_with_head_movement import OrientationPerceptionFreeZoneModelWithHeadMovementSimulator
 from simulator.head_movement.enum_weight_options import WeightOptions
 from animal_models.pigeon import Pigeon
-from animal_models.zebrafinch import Zebrafinch
 from area_models.landmark import Landmark
 
 from neural_network.activation_layer import ActivationLayer

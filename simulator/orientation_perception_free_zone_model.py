@@ -4,11 +4,7 @@ import matplotlib.patches as mpatches
 import shapely.ops as shpops
 from shapely import Point
 
-from animal_models.pigeon import Pigeon
-from animal_models.focus_area import FocusArea
-import general.normalisation as normal
 import general.angle_conversion as ac
-import simulator.head_movement.weight_options as wo
 import vision.perception_strength as pstrength
 
 from simulator.base_simulator import BaseSimulator

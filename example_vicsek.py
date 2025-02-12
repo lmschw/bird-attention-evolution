@@ -1,7 +1,5 @@
 from animal_models.pigeon import Pigeon
-from area_models.landmark import Landmark
 from simulator.vicsek_simulator import VicsekSimulator
-
 
 n_agents = 10
 n_steps = 10000

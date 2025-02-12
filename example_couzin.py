@@ -1,5 +1,4 @@
 from animal_models.pigeon import Pigeon
-from area_models.landmark import Landmark
 from simulator.couzin_with_perception_strength_simulator import CouzinZoneModelSimulator
 
 

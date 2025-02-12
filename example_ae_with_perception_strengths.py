@@ -1,5 +1,4 @@
 from animal_models.pigeon import Pigeon
-from area_models.landmark import Landmark
 from simulator.ae_simulator_with_perception_strength import ActiveElasticWithPerceptionStrengthSimulator
 
 n_agents = 10

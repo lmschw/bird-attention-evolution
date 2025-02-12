@@ -1,15 +1,6 @@
 import numpy as np
-import os
-import math
-import matplotlib.pyplot as plt
-from scipy.stats import levy_stable, circmean, circvar
-import pickle
-from datetime import datetime
-from shapely.geometry import LineString, Point
-from shapely.ops import nearest_points
 
 import vision.perception_strength as pstrength
-import simulator.head_movement.weight_options as wo
 import general.angle_conversion as ac
 
 from simulator.couzin_simulator import CouzinZoneModelSimulator

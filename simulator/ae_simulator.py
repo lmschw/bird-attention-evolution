@@ -1,15 +1,7 @@
 import numpy as np
-import os
-import math
 import matplotlib.pyplot as plt
-from scipy.stats import levy_stable, circmean, circvar
-import pickle
-from datetime import datetime
-from shapely.geometry import LineString, Point
-from shapely.ops import nearest_points
 
 import general.angle_conversion as ac
-
 from simulator.base_simulator import BaseSimulator
 
 # AE Constants

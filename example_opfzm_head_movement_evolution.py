@@ -2,7 +2,6 @@ import numpy as np
 
 from simulator.head_movement.enum_weight_options import WeightOptions
 from animal_models.pigeon import Pigeon
-from area_models.landmark import Landmark
 
 from genetic.genetic_algorithm_opfzm import DifferentialEvolution
 from genetic.metrics import Metrics

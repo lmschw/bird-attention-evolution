@@ -1,5 +1,4 @@
 import numpy as np
-import scipy.integrate as integrate
 import csv
 import matplotlib.pyplot as plt
 

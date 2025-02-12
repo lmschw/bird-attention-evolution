@@ -1,12 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import shapely.ops as shpops
-from shapely import Point
 
-from animal_models.pigeon import Pigeon
-from animal_models.focus_area import FocusArea
-import general.normalisation as normal
 import general.angle_conversion as ac
 import simulator.head_movement.weight_options as wo
 from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator

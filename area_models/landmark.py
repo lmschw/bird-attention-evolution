@@ -1,8 +1,6 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from shapely import centroid
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon
 
 """
 Represents a landmark, e.g. a tree, house etc.. 

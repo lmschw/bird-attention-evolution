@@ -1,16 +1,7 @@
-import numpy as np
-
 from simulator.orientation_perception_free_zone_model_with_predators import OrientationPerceptionFreeZoneModelSimulatorWithPredators
-from simulator.head_movement.enum_weight_options import WeightOptions
 from animal_models.pigeon import Pigeon
-from animal_models.zebrafinch import Zebrafinch
 from animal_models.hawk import Hawk
 from area_models.landmark import Landmark
-
-from neural_network.activation_layer import ActivationLayer
-from neural_network.fully_connected_layer import FullyConnectedLayer
-from neural_network.neural_network import NeuralNetwork
-import neural_network.activation_functions as snn
 
 n_steps = 10000
 domain_size = (500, 500)

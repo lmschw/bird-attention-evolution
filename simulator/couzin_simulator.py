@@ -48,6 +48,12 @@ class CouzinZoneModelSimulator(BaseSimulator):
     def initialize(self):
         self.field_of_vision_half = self.compute_field_of_vision() / 2 # todo add field of vision as limitation in base model
         return super().initialize()
+    
+    def get_in_field_of_vision_neighbours(self, bearings):
+        """
+        Returns a boolean array representing which other agents are within the field of vision
+        """
+        return np.absolute(bearings) < self.field_of_vision_half
 
     def get_repulsion_neighbours(self, distances):
         """
@@ -81,7 +87,7 @@ class CouzinZoneModelSimulator(BaseSimulator):
         bearings_norm = np.repeat(np.linalg.norm(bearings, axis=2)[:,:, np.newaxis], 2, axis=2)
         rij = np.divide(bearings, bearings_norm, out=np.zeros_like(bearings), where=bearings_norm!=0) # prevents divide by zero
         rij_norm = np.linalg.norm(rij)
-        orientations = np.sum(np.divide(rij, rij_norm, out=np.zeros_like(rij), where=rij_norm!=0), axis=1) # prevents divide by zero
+        orientations = -np.sum(np.divide(rij, rij_norm, out=np.zeros_like(rij), where=rij_norm!=0), axis=1) # prevents divide by zero
         return ac.compute_angles_for_orientations(orientations=orientations)
     
     def get_alignment_orientations(self, headings, neighbours):
@@ -113,7 +119,7 @@ class CouzinZoneModelSimulator(BaseSimulator):
         bearings_norm = np.repeat(np.linalg.norm(bearings, axis=2)[:,:, np.newaxis], 2, axis=2)
         rij = np.divide(bearings, bearings_norm, out=np.zeros_like(bearings), where=bearings_norm!=0) # prevents divide by zero
         rij_norm = np.linalg.norm(rij)
-        orientations = -np.sum(np.divide(rij, rij_norm, out=np.zeros_like(rij), where=rij_norm!=0), axis=1) # prevents divide by zero
+        orientations = np.sum(np.divide(rij, rij_norm, out=np.zeros_like(rij), where=rij_norm!=0), axis=1) # prevents divide by zero
         return ac.compute_angles_for_orientations(orientations=orientations)
     
     def compute_new_orientations(self, agents):
@@ -127,10 +133,14 @@ class CouzinZoneModelSimulator(BaseSimulator):
         positions = np.column_stack((agents[:,0], agents[:,1]))
         distances, angles = self.compute_distances_and_angles()
 
+        in_field_of_vision = self.get_in_field_of_vision_neighbours(bearings=angles)
+
         # determine which neighbour falls into which zone if any at all
-        repulsed = self.get_repulsion_neighbours(distances=distances)
-        aligned = self.get_alignment_neighbours(distances=distances)
-        attracted = self.get_attraction_neighbours(distances=distances)
+        repulsed = self.get_repulsion_neighbours(distances=distances) & in_field_of_vision
+        aligned = self.get_alignment_neighbours(distances=distances) & in_field_of_vision
+        attracted = self.get_attraction_neighbours(distances=distances) & in_field_of_vision
+
+        print(f"r:{np.count_nonzero(repulsed, axis=1)}, al:{np.count_nonzero(aligned, axis=1)}, at:{np.count_nonzero(attracted, axis=1)}, t:{np.count_nonzero(repulsed, axis=1) + np.count_nonzero(aligned, axis=1) + np.count_nonzero(attracted, axis=1)}")
 
         # compute the orientation that each zone yields for each agent
         repulsion_orientations = self.get_repulsion_orientations(positions=positions, neighbours=repulsed)

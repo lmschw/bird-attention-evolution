@@ -16,11 +16,12 @@ Evaluation plots:
 """
 
 class EvaluatorCorridor:
-    def __init__(self, data_file_path, base_save_path, max_iters=None, corridor_centers=[]):
+    def __init__(self, data_file_path, base_save_path, max_iters=None, corridor_centers=[], corridor_endpoints=[]):
         self.data_file_path = data_file_path
         self.base_save_path = base_save_path
         self.max_iters = max_iters
         self.corridor_centers = corridor_centers
+        self.corridor_endpoints = corridor_endpoints
         self.data = logger.load_log_data(self.data_file_path, max_iters=max_iters)
 
     def evaluate_and_visualise(self, metric=None):
@@ -41,8 +42,15 @@ class EvaluatorCorridor:
                 xlim = plt.gca().get_xlim()
                 ylim = plt.gca().get_ylim()
                 self.plot(metric=Metrics.CORRIDOR_DISTRIBUTION, xlim=xlim, ylim=ylim)
-        # if metric in [None, Metrics.SUCCESS_PERCENTAGE]:
-        #     self.plot_success_percentage()
+        if metric in [None, Metrics.SUCCESS_PERCENTAGE]:
+            if len(self.corridor_endpoints) != 2:
+                print("need to specify the endpoint of the corridors upon instantiation to evaluate CORRIDOR_DISTRIBUTION")
+            else:
+                data = self.evaluate_success_percentage()
+                self.create_pie_plot(data=data, labels=['percentage agents got through', 'percentage agents left behind'])
+                xlim = plt.gca().get_xlim()
+                ylim = plt.gca().get_ylim()
+                self.plot(metric=Metrics.SUCCESS_PERCENTAGE, xlim=xlim, ylim=ylim)
 
     def evaluate_cohesion(self):
         cohesion_results = {t: [] for t in range(len(self.data[0]))}
@@ -78,7 +86,32 @@ class EvaluatorCorridor:
                     if corridor_0_percentage == 1 or corridor_1_percentage == 1:
                         count_all_same_corridor += 1
                     break
+                if point_check == 'y' and self.data[iter][t][0,1] >= self.corridor_centers[0][1]:
+                    result = np.absolute(self.corridor_centers[0][0]-self.data[iter][t][:,0]) < np.absolute(self.corridor_centers[1][0]-self.data[iter][t][:,0])
+                    corridor_1_percentage = np.count_nonzero(result) / len(result)
+                    corridor_0_percentage = 1-corridor_1_percentage
+                    if corridor_0_percentage == 1 or corridor_1_percentage == 1:
+                        count_all_same_corridor += 1
+                    break
         return np.array([count_all_same_corridor/len(self.data), (len(self.data)-count_all_same_corridor)/len(self.data)])
+
+    def evaluate_success_percentage(self):
+        corridor_diff_x = np.absolute(self.corridor_endpoints[0][0]-self.corridor_endpoints[1][0])
+        corridor_diff_y = np.absolute(self.corridor_endpoints[0][1]-self.corridor_endpoints[1][1])
+
+        point_check = 'x' # the axis along which we're moving
+        if corridor_diff_x > corridor_diff_y:
+            point_check = 'y'
+
+        success_percentages = []
+        for iter in range(len(self.data)):
+            t = -1
+            if point_check == 'x':
+                result = (self.corridor_endpoints[0][0] < self.data[iter][t][:,0]) & (self.corridor_endpoints[1][0] < self.data[iter][t][:,0])
+                success_percentage = np.count_nonzero(result) / len(result)
+                success_percentages.append(success_percentage)
+        avg_success = np.average(success_percentages)
+        return np.array([avg_success, 1-avg_success])
 
     def create_line_plot(self, data, labels=[""], xlim=None, ylim=None):
         sorted(data.items())

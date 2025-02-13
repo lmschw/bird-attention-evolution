@@ -2,6 +2,12 @@ import numpy as np
 
 from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator
 from animal_models.pigeon import Pigeon
+from animal_models.hawk import Hawk
+from animal_models.zebrafinch import Zebrafinch
+from animal_models.zebra import Zebra
+from animal_models.wolf import Wolf
+from animal_models.rabbit import Rabbit
+
 from area_models.landmark import Landmark
 import loggers.logger_agents as logger
 import loggers.logger_model_params as logger_params
@@ -36,45 +42,49 @@ landmark_3 = Landmark('3', corners=[[100, 70], [100, 100], [150, 100], [150, 75]
 
 landmarks = [border, landmark_1, landmark_2, landmark_3]
 
-base_save_path = "navigation_through_narrow_hole"
-save_path_params = f"log_params_{base_save_path}.csv"
-save_path_agents = f"log_agents_{base_save_path}.csv"
-save_path_centroid = f"log_centroid_{base_save_path}.csv"
+num_iters = 500
 
-model_params = {
-    "n": n_agents,
-    "tmax": n_steps,
-    "domain_size": domain_size,
-    "noise": noise_amplitude,
-    "start_position": start_position,
-    "single_speed": single_speed,
-    "animal_type": animal_type.name,
-    "dist_based_zone_factors": dist_based_zone_factors,
-    "social_weight": social_weight,
-    "environment_weight": environment_weight,
-    "landmarks": "-".join(",".join(f"[{corner[0]},{corner[1]}]" for corner in landmark.corners) for landmark in landmarks)
-}
+for animal_type in [Pigeon(), Hawk(), Zebrafinch(), Zebra(), Wolf(), Rabbit()]:
+    base_save_path = f"corridor_{animal_type.name}"
+    save_path_params = f"log_params_{base_save_path}.csv"
+    save_path_agents = f"log_agents_{base_save_path}.csv"
+    save_path_centroid = f"log_centroid_{base_save_path}.csv"
 
-logger_params.log_model_params(model_params_dict=model_params, save_path=save_path_params)
-logger.initialise_log_file_with_headers(['iter', 't', 'i', 'x', 'y', 'h'], save_path=save_path_agents)
-logger.initialise_log_file_with_headers(['iter', 't', 'x', 'y'], save_path=save_path_centroid)
+    model_params = {
+        "n": n_agents,
+        "tmax": n_steps,
+        "domain_size": domain_size,
+        "noise": noise_amplitude,
+        "start_position": start_position,
+        "single_speed": single_speed,
+        "animal_type": animal_type.name,
+        "dist_based_zone_factors": dist_based_zone_factors,
+        "social_weight": social_weight,
+        "environment_weight": environment_weight,
+        "landmarks": "-".join(",".join(f"[{corner[0]},{corner[1]}]" for corner in landmark.corners) for landmark in landmarks)
+    }
 
-for iter in range(100):
-    sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
-                        animal_type=animal_type,
-                        domain_size=domain_size,
-                        start_position=start_position,
-                        use_distant_dependent_zone_factors=dist_based_zone_factors,
-                        landmarks=landmarks,
-                        social_weight=social_weight,
-                        environment_weight=environment_weight,
-                        single_speed=single_speed,
-                        visualize=visualize,
-                        visualize_vision_fields=visualize_vision_fields,
-                        follow=follow,
-                        graph_freq=graph_freq,
-                        save_path_agents=save_path_agents,
-                        save_path_centroid=save_path_centroid,
-                        iter=iter)
-    sim.run(tmax=n_steps)
+    logger_params.log_model_params(model_params_dict=model_params, save_path=save_path_params)
+    logger.initialise_log_file_with_headers(['iter', 't', 'i', 'x', 'y', 'h'], save_path=save_path_agents)
+    logger.initialise_log_file_with_headers(['iter', 't', 'x', 'y'], save_path=save_path_centroid)
+
+    for iter in range(num_iters):
+        print(f"{animal_type.name} - {iter} / {num_iters}")
+        sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
+                            animal_type=animal_type,
+                            domain_size=domain_size,
+                            start_position=start_position,
+                            use_distant_dependent_zone_factors=dist_based_zone_factors,
+                            landmarks=landmarks,
+                            social_weight=social_weight,
+                            environment_weight=environment_weight,
+                            single_speed=single_speed,
+                            visualize=visualize,
+                            visualize_vision_fields=visualize_vision_fields,
+                            follow=follow,
+                            graph_freq=graph_freq,
+                            save_path_agents=save_path_agents,
+                            save_path_centroid=save_path_centroid,
+                            iter=iter)
+        sim.run(tmax=n_steps)
 

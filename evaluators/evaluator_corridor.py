@@ -51,6 +51,15 @@ class EvaluatorCorridor:
                 xlim = plt.gca().get_xlim()
                 ylim = plt.gca().get_ylim()
                 self.plot(metric=Metrics.SUCCESS_PERCENTAGE, xlim=xlim, ylim=ylim)
+        if metric in [None, Metrics.DURATION]:
+            if len(self.corridor_endpoints) != 2:
+                print("need to specify the endpoint of the corridors upon instantiation to evaluate CORRIDOR_DISTRIBUTION")
+            else:
+                data = self.evaluate_duration()
+                self.create_bar_plot(data=data, labels=['min', 'avg', 'max'])
+                xlim = plt.gca().get_xlim()
+                ylim = plt.gca().get_ylim()
+                self.plot(metric=Metrics.DURATION, xlim=xlim, ylim=ylim)
 
     def evaluate_cohesion(self):
         cohesion_results = {t: [] for t in range(len(self.data[0]))}
@@ -110,8 +119,30 @@ class EvaluatorCorridor:
                 result = (self.corridor_endpoints[0][0] < self.data[iter][t][:,0]) & (self.corridor_endpoints[1][0] < self.data[iter][t][:,0])
                 success_percentage = np.count_nonzero(result) / len(result)
                 success_percentages.append(success_percentage)
+            else:
+                result = (self.corridor_endpoints[0][1] < self.data[iter][t][:,1]) & (self.corridor_endpoints[1][0] < self.data[iter][t][:,1])
+                success_percentage = np.count_nonzero(result) / len(result)
+                success_percentages.append(success_percentage)
         avg_success = np.average(success_percentages)
         return np.array([avg_success, 1-avg_success])
+    
+    def evaluate_duration(self):
+        corridor_diff_x = np.absolute(self.corridor_endpoints[0][0]-self.corridor_endpoints[1][0])
+        corridor_diff_y = np.absolute(self.corridor_endpoints[0][1]-self.corridor_endpoints[1][1])
+
+        point_check = 'x' # the axis along which we're moving
+        if corridor_diff_x > corridor_diff_y:
+            point_check = 'y'
+
+        durations = []
+        for iter in range(len(self.data)):
+            for t in range(len(self.data[iter])):
+                if point_check == 'x':
+                    result = (self.corridor_endpoints[0][0] < self.data[iter][t][:,0]) & (self.corridor_endpoints[1][0] < self.data[iter][t][:,0])
+                    if np.count_nonzero(result) == len(result):
+                        durations.append(t)
+                        break
+        return np.array([np.min(durations), np.average(durations), np.max(durations)])
 
     def create_line_plot(self, data, labels=[""], xlim=None, ylim=None):
         sorted(data.items())
@@ -128,7 +159,10 @@ class EvaluatorCorridor:
     def create_pie_plot(self, data, labels):
         patches, _ = plt.pie(data, labels=[f"{int(p*100)}%" for p in data])
         plt.legend(patches, labels, loc="best")
-        #plt.gca().pie(data, labels=labels)
+
+    def create_bar_plot(self, data, labels):
+        plt.bar(x=[1, 3, 5], height=data, tick_label=labels)
+        #plt.legend(patches, labels, loc="best")
 
     def plot(self, metric, x_label=None, y_label=None, subtitle=None, xlim=None, ylim=None):
         ax = plt.gca()

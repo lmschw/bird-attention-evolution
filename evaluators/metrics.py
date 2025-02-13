@@ -8,6 +8,7 @@ class Metrics(str, Enum):
     ORDER = "O",
     COHESION_AND_ORDER = "CAO",
     CORRIDOR_DISTRIBUTION = "CD",
-    SUCCESS_PERCENTAGE = "SP"
+    SUCCESS_PERCENTAGE = "SP",
+    DURATION = "D"
 
 

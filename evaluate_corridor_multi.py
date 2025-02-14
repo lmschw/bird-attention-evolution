@@ -14,6 +14,7 @@ for n in [7]:
         evaluator = EvaluatorCorridorMulti(data_file_paths=save_path_agents,
                                                 data_labels=["Pigeon", "Hawk"],
                                                 base_save_path=base_save_path,
+                                                animal_types=[Pigeon(), Hawk()],
                                                 max_iters=2,
                                                 corridor_centers=[[125, 27.5], [125, 67.5]],
                                                 corridor_endpoints=[[150, 27.5], [150, 67.5]])

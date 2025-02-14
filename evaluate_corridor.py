@@ -13,6 +13,7 @@ for n in [7]:
         save_path_agents = f"log_agents_{base_save_path}.csv"
         evaluator = EvaluatorCorridor(data_file_path=save_path_agents, 
                                         base_save_path=base_save_path,
+                                        animal_type=animal_type,
                                         max_iters=2,
                                         corridor_centers=[[125, 27.5], [125, 67.5]],
                                         corridor_endpoints=[[150, 27.5], [150, 67.5]])

@@ -15,11 +15,14 @@ Evaluation plots:
 """
 
 class EvaluatorCorridorMulti(EvaluatorBasicMovementMulti):
-    def __init__(self, data_file_paths, data_labels, base_save_path, max_iters=None, corridor_centers=[], corridor_endpoints=[]):
+    def __init__(self, data_file_paths, data_labels, base_save_path, animal_types, max_iters=None, 
+                 corridor_centers=[], corridor_endpoints=[]):
         super().__init__(data_file_paths=data_file_paths,
                          data_labels=data_labels,
                          base_save_path=base_save_path,
+                         animal_type=animal_types[0],
                          max_iters=max_iters)
+        self.animal_types = animal_types
         self.corridor_centers = corridor_centers
         self.corridor_endpoints = corridor_endpoints
 
@@ -27,10 +30,11 @@ class EvaluatorCorridorMulti(EvaluatorBasicMovementMulti):
         for metric in metrics:
             data = []
             for i in range(len(self.data)):
+                animal_type = self.animal_types[i]
                 subdata = self.data[i]
                 match metric:
                     case Metrics.COHESION:
-                        data.append(mf.evaluate_cohesion(data=subdata))
+                        data.append(mf.evaluate_cohesion(data=subdata, animal_type=animal_type))
                     case Metrics.ORDER:
                         data.append(mf.evaluate_order(data=subdata))   
                     case Metrics.CORRIDOR_DISTRIBUTION:
@@ -52,14 +56,19 @@ class EvaluatorCorridorMulti(EvaluatorBasicMovementMulti):
 
     def create_plot(self, data, metric):
             set_lims = False
+            y_label = None
+            x_label = None
             match metric:
                 case Metrics.COHESION:
                     eplot.create_line_plot(data=data, labels=self.data_labels)
+                    x_label = "timesteps"
+                    y_label = 'cohesion (width/average distance from centroid)'
                 case Metrics.ORDER:
                     eplot.create_line_plot(data=data, labels=self.data_labels)
+                    x_label = "timesteps"
+                    y_label = "global order"
                 case Metrics.CORRIDOR_DISTRIBUTION:
                     eplot.create_bar_plot(data=data, labels=self.data_labels)
-                    set_lims = True
                 case Metrics.CORRIDOR_DISTRIBUTION:
                     eplot.create_bar_plot(data=data, labels=self.data_labels)
                 case Metrics.SUCCESS_PERCENTAGE:
@@ -69,6 +78,6 @@ class EvaluatorCorridorMulti(EvaluatorBasicMovementMulti):
             if set_lims:
                 xlim = plt.gca().get_xlim()
                 ylim = plt.gca().get_ylim()
-                eplot.plot(metric=Metrics.CORRIDOR_DISTRIBUTION, xlim=xlim, ylim=ylim)
+                eplot.plot(metric=Metrics.CORRIDOR_DISTRIBUTION, base_save_path=self.base_save_path, x_label=x_label, y_label=y_label, xlim=xlim, ylim=ylim)
             else:
                 eplot.plot(metric=metric)

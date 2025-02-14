@@ -18,6 +18,6 @@ class EvaluatorPredatorMulti(EvaluatorBasicMovementMulti):
     def load_data(self):
         data = []
         for path in self.data_file_paths:
-            data.append(logger.load_log_data(self.data_file_path, max_iters=self.max_iters, is_predator_scenario=True))
+            data.append(logger.load_log_data(path, max_iters=self.max_iters, is_predator_scenario=True))
         return data
 

@@ -17,5 +17,6 @@ for num_prey in [7]:
                 save_path_agents = f"log_agents_{base_save_path}.csv"
                 evaluator = EvaluatorPredator(data_file_path=save_path_agents, 
                                                 base_save_path=base_save_path,
+                                                animal_type=animal_type_prey,
                                                 max_iters=500)
                 evaluator.evaluate_and_visualise()

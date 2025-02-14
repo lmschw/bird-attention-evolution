@@ -15,21 +15,21 @@ def compute_global_order(agents):
     sum_orientation = np.sum(orientations[np.newaxis,:,:],axis=1)
     return np.divide(np.sqrt(np.sum(sum_orientation**2,axis=1)), len(orientations))[0]
 
-def compute_cohesion(agents):
+def compute_cohesion(agents, animal_type):
     """
     Computes the average distance to the centroid in order to measure cohesion
     """
     positions = np.column_stack((agents[:,0], agents[:,1]))
     centroid = np.mean(positions, axis=0)
     distances = [math.dist(pos, centroid) for pos in positions]
-    return np.average(distances)
+    return 1/(np.average(distances) / animal_type.width)
 
 
-def evaluate_cohesion(data):
+def evaluate_cohesion(data, animal_type):
     cohesion_results = {t: [] for t in range(len(data[0]))}
     for iter in range(len(data)):
         for t in range(len(data[iter])):
-            result = compute_cohesion(data[iter][t])
+            result = compute_cohesion(data[iter][t], animal_type)
             cohesion_results[t].append(result)
     return {t: np.average(cohesion_results[t]) for t in range(len(data[0]))}
 

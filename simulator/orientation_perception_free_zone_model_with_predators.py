@@ -14,9 +14,9 @@ DIST_MOD = 0.001
 
 class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPerceptionFreeZoneModelSimulator):
     def __init__(self, num_prey, animal_type_prey, num_predators, animal_type_predator, domain_size, start_position_prey, 
-                 start_position_predator, pack_hunting=False, landmarks=[], noise_amplitude=0, social_weight=1, environment_weight=1,
-                 other_type_weight=1, limit_turns=True, use_distant_dependent_zone_factors=True, single_speed=True, 
-                 visualize=True, visualize_vision_fields_prey=0, visualize_vision_fields_predator=0, follow=False, 
+                 start_position_predator, pack_hunting=False, landmarks=[], noise_amplitude=0, social_weights=[1,1], environment_weights=[1,1],
+                 other_type_weights=[1,1], limit_turns=True, use_distant_dependent_zone_factors=True, single_speed=True, 
+                 kill=True, killing_frenzy=False, visualize=True, visualize_vision_fields_prey=0, visualize_vision_fields_predator=0, follow=False, 
                  graph_freq=5):
         """
         Params:
@@ -48,8 +48,8 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
                          start_position=start_position_prey,
                          landmarks=landmarks,
                          noise_amplitude=noise_amplitude,
-                         social_weight=social_weight,
-                         environment_weight=environment_weight,
+                         social_weight=social_weights[0],
+                         environment_weight=environment_weights[0],
                          limit_turns=limit_turns,
                          use_distant_dependent_zone_factors=use_distant_dependent_zone_factors,
                          single_speed=single_speed,
@@ -65,7 +65,11 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         self.start_position_prey = start_position_prey
         self.start_position_predator = start_position_predator
         self.pack_hunting = pack_hunting
-        self.other_type_weight = other_type_weight
+        self.social_weights = social_weights
+        self.environment_weights = environment_weights
+        self.other_type_weights = other_type_weights
+        self.kill = kill
+        self.killing_frenzy = killing_frenzy
         self.visualize_vision_fields_prey = visualize_vision_fields_prey
         self.visualize_vision_fields_predator = visualize_vision_fields_predator
 
@@ -99,14 +103,16 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         prey, self.colours_prey = self.init_agents_for_animal_type(num_agents=self.num_prey, 
                                                animal_type=self.animal_type_prey, 
                                                start_position=self.start_position_prey,
-                                               visualize_vision_fields=self.visualize_vision_fields_prey)
+                                               visualize_vision_fields=self.visualize_vision_fields_prey,
+                                               is_prey=True)
         predators, self.colours_predator = self.init_agents_for_animal_type(num_agents=self.num_predators, 
                                                animal_type=self.animal_type_predator, 
                                                start_position=self.start_position_predator,
-                                               visualize_vision_fields=self.visualize_vision_fields_predator)
+                                               visualize_vision_fields=self.visualize_vision_fields_predator,
+                                               is_prey=False)
         return prey, predators
 
-    def init_agents_for_animal_type(self, num_agents, animal_type, start_position, visualize_vision_fields):
+    def init_agents_for_animal_type(self, num_agents, animal_type, start_position, visualize_vision_fields, is_prey):
         """
         Initialises the agents (positions and orientations) for either prey or predators.
         """
@@ -137,7 +143,15 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
 
         colours = np.random.uniform(0, 1, (visualize_vision_fields, 3))
 
-        return np.column_stack([pos_xs, pos_ys, pos_hs, speeds]), colours
+        if is_prey:
+            weights = np.full((num_agents, 3), [self.social_weights[0], self.environment_weights[0], self.other_type_weights[0]])
+        else:    
+            weights = np.full((num_agents, 3), [self.social_weights[1], self.environment_weights[1], self.other_type_weights[1]])
+            if not self.pack_hunting:
+                weights[:,0] = 0
+        alive = np.ones(num_agents)
+
+        return np.column_stack([pos_xs, pos_ys, pos_hs, speeds, weights, alive]), colours
     
     def graph_vision_fields(self, agents, animal_type, visualize_vision_fields, colours):
         """
@@ -160,11 +174,14 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         """
         Redraws an agent type (prey or predator)
         """
-        uv_coords = ac.compute_u_v_coordinates_for_angles(agents[:,2])
 
-        self.ax.scatter(agents[:, 0], agents[:, 1], color="white", s=15)
+        alive_agents = agents[agents[:,7] == 1]
 
-        self.ax.quiver(agents[:, 0], agents[:, 1],
+        uv_coords = ac.compute_u_v_coordinates_for_angles(alive_agents[:,2])
+
+        self.ax.scatter(alive_agents[:, 0], alive_agents[:, 1], color="white", s=15)
+
+        self.ax.quiver(alive_agents[:, 0], alive_agents[:, 1],
                     uv_coords[:, 0], uv_coords[:, 1],
                     color=colour, width=0.005, scale=40)
 
@@ -184,8 +201,10 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
                 self.ax.annotate(landmark.id, landmark.get_annotation_point(), color="white")
 
         # Draw prey and predators
-        self.graph_arrows(agents=prey, colour="white")
-        self.graph_arrows(agents=predators, colour="red")
+        if len(prey) > 0:
+            self.graph_arrows(agents=prey, colour="white")
+        if len(predators) > 0:
+            self.graph_arrows(agents=predators, colour="red")
 
         self.ax.set_facecolor((0, 0, 0))
 
@@ -217,9 +236,9 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         Computes the orientation difference that is caused by predators on prey (repulsion only).
         """
         distances, angles = self.compute_distances_and_angles_other_type(prey, predators)
-        match_factors = np.full((self.num_prey, self.num_predators), 1) # always repulsed
-        side_factors = self.compute_side_factors(angles, shape=(self.num_prey, self.num_predators))
-        vision_strengths = self.compute_vision_strengths(distances=distances.T, angles=angles, shape=(self.num_prey, self.num_predators))
+        match_factors = np.full((len(prey), len(predators)), 1) # always repulsed
+        side_factors = self.compute_side_factors(angles, shape=(len(prey), len(predators)))
+        vision_strengths = self.compute_vision_strengths(distances=distances.T, angles=angles, shape=(len(prey), len(predators)))
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
 
     def compute_delta_orientations_towards_prey(self, prey, predators):
@@ -227,9 +246,9 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         Computes the orientation difference that is caused by prey on predators (attraction only).
         """
         distances, angles = self.compute_distances_and_angles_other_type(predators, prey)
-        match_factors = np.full((self.num_predators, self.num_prey), -1) # always attracted
-        side_factors = self.compute_side_factors(angles, shape=(self.num_predators, self.num_prey))
-        vision_strengths = self.compute_vision_strengths(distances=distances.T, angles=angles, shape=(self.num_predators, self.num_prey))
+        match_factors = np.full((len(predators),len(prey)), -1) # always attracted
+        side_factors = self.compute_side_factors(angles, shape=(len(predators), len(prey)))
+        vision_strengths = self.compute_vision_strengths(distances=distances.T, angles=angles, shape=(len(predators), len(prey)))
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
 
     def compute_delta_orientations(self, prey, predators, is_prey):
@@ -249,19 +268,12 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         else:
             delta_orientations_landmarks = 0
 
-        if self.other_type_weight != 0:
-            if is_prey:
-                delta_orientations_other_type = self.compute_delta_orientations_away_from_predators(prey, predators)
-            else:
-                delta_orientations_other_type = self.compute_delta_orientations_towards_prey(prey, predators)
+        if is_prey:
+            delta_orientations_other_type = self.compute_delta_orientations_away_from_predators(prey, predators)
         else:
-            delta_orientations_other_type = 0
+            delta_orientations_other_type = self.compute_delta_orientations_towards_prey(prey, predators)
 
-        social_weight = self.social_weight
-        if not is_prey and not self.pack_hunting:
-            social_weight = 0
-
-        delta_orientations = social_weight * delta_orientations_conspecifics + self.environment_weight * delta_orientations_landmarks + self.other_type_weight * delta_orientations_other_type
+        delta_orientations = agents[:,4] * delta_orientations_conspecifics + agents[:,5] * delta_orientations_landmarks + agents[:,6] * delta_orientations_other_type
         delta_orientations = np.where((delta_orientations > animal_type.max_turn_angle), animal_type.max_turn_angle, delta_orientations)
         delta_orientations = np.where((delta_orientations < -animal_type.max_turn_angle), -animal_type.max_turn_angle, delta_orientations)
         return delta_orientations, distances, angles, vision_strengths
@@ -277,7 +289,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
 
         delta_orientations, distances, angles, vision_strengths = self.compute_delta_orientations(prey=prey, predators=predators, is_prey=is_prey)
         # add noise
-        delta_orientations = delta_orientations + self.generate_noise()
+        delta_orientations = delta_orientations + self.generate_noise(len(agents))
 
         new_orientations = ac.wrap_to_pi(agents[:,2] + delta_orientations)
         return new_orientations
@@ -286,11 +298,23 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         """
         Computes the new orientations for all agents (predator and prey).
         """
-        self.num_agents = self.num_prey
-        prey_orientations = self.compute_new_orientations_for_type(prey, predators, is_prey=True)
+        if len(prey) > 0:
+            self.num_agents = self.num_prey
+            prey_orientations = self.compute_new_orientations_for_type(prey, predators, is_prey=True)
+        else:
+            prey_orientations = prey[:,2]
         self.num_agents = self.num_predators
         predators_orientations = self.compute_new_orientations_for_type(prey, predators, is_prey=False)
         return prey_orientations, predators_orientations
+    
+    def check_kills(self, prey, predators):
+        x_close = np.absolute(prey[:,0]-predators[:,0]) < 1
+        y_close = np.absolute(prey[:,1]-predators[:,1]) < 1
+        close = x_close & y_close
+        prey[:,7] = np.where(close, 0, prey[:,7])
+        if not self.killing_frenzy:
+            predators[:,6] = np.where(np.count_nonzero(close) > 0, -1, predators[:,6]) # if they have caught something, they no longer hunt and are therefore not attracted to prey anymore
+        return prey, predators
     
     def run(self, tmax):
         """
@@ -304,6 +328,9 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         for t in range(tmax):
             self.current_step = t
 
+            # clean up the prey
+            prey = prey[prey[:,7] == 1]
+
             self.prey = prey
             self.predators = predators
 
@@ -313,10 +340,10 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
             self.prey = prey
             self.predators = predators
             
-            prey_o, predator_o  = self.compute_new_orientations(prey=prey, predators=predators)
+            prey[:,2], predators[:,2]  = self.compute_new_orientations(prey=prey, predators=predators)
 
-            prey[:,2] = prey_o
-            predators[:,2] = predator_o
+            if self.kill:
+                prey, predators = self.check_kills(prey=prey, predators=predators)
 
             if not (self.current_step % self.graph_freq) and self.visualize and self.current_step > 0:
                 self.graph_agents(prey=prey, predators=predators)

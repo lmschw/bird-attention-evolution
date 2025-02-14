@@ -8,7 +8,7 @@ domain_size = (500, 500)
 noise_amplitude = 0.2
 graph_freq = 10
 visualize = True
-follow = True
+follow = False
 single_speed = True
 limit_turns = True
 use_distant_dependent_zone_factors = True
@@ -32,9 +32,12 @@ pack_hunting = False
 visualize_vision_fields_prey = 1
 visualize_vision_fields_predator = 1
 
-social_weight = 0.5
-environment_weight = 0
-other_type_weight = 0.5
+social_weights = [0.5, 0.5]
+environment_weights = [0, 0]
+other_type_weights = [0.5, 0.5]
+
+kill = True
+killing_frenzy = False
 
 sim = OrientationPerceptionFreeZoneModelSimulatorWithPredators(num_prey=num_prey,
                                    animal_type_prey=animal_type_prey,
@@ -45,12 +48,14 @@ sim = OrientationPerceptionFreeZoneModelSimulatorWithPredators(num_prey=num_prey
                                    start_position_predator=start_position_predator,
                                    landmarks=landmarks,
                                    noise_amplitude=noise_amplitude,
-                                   social_weight=social_weight,
-                                   environment_weight=environment_weight,
-                                   other_type_weight=other_type_weight,
+                                   social_weights=social_weights,
+                                   environment_weights=environment_weights,
+                                   other_type_weights=other_type_weights,
                                    limit_turns=limit_turns,
                                    use_distant_dependent_zone_factors=use_distant_dependent_zone_factors,
                                    single_speed=single_speed,
+                                   kill=kill,
+                                   killing_frenzy=killing_frenzy,
                                    visualize=visualize,
                                    visualize_vision_fields_prey=visualize_vision_fields_prey,
                                    visualize_vision_fields_predator=visualize_vision_fields_predator,

@@ -203,7 +203,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         """
         repulsion_zone = distances < self.animal_type.preferred_distance_left_right[0]
         attraction_zone = distances > self.animal_type.preferred_distance_left_right[1]
-        match_factors = np.zeros((self.num_agents, self.num_agents))
+        match_factors = np.zeros((len(distances), len(distances)))
         if self.use_distant_dependent_zone_factors:
             rep_factors = -(1/distances) # stronger repulsion the closer the other is
             att_factors = 1-(1/distances) # stronger attration the farther away the other is
@@ -256,8 +256,8 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         """
         distances, angles = self.compute_distances_and_angles_conspecifics(agents)
         match_factors = self.compute_conspecific_match_factors(distances=distances)
-        side_factors = self.compute_side_factors(angles, shape=(self.num_agents, self.num_agents))
-        vision_strengths = self.compute_vision_strengths(distances=distances, angles=angles, shape=(self.num_agents, self.num_agents))
+        side_factors = self.compute_side_factors(angles, shape=(len(agents), len(agents)))
+        vision_strengths = self.compute_vision_strengths(distances=distances, angles=angles, shape=(len(agents), len(agents)))
         return np.sum(match_factors * side_factors * vision_strengths, axis=1), distances, angles, vision_strengths
     
     def compute_delta_orientations_landmarks(self, agents):
@@ -266,8 +266,8 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         """
         distances, angles = self.compute_distances_and_angles_landmarks(agents=agents)
         match_factors = self.compute_landmark_match_factors(distances=distances)
-        side_factors = self.compute_side_factors(angles, shape=(self.num_agents, len(self.landmarks)))
-        vision_strengths = self.compute_vision_strengths(distances=distances, angles=angles, shape=(self.num_agents, len(self.landmarks)))
+        side_factors = self.compute_side_factors(angles, shape=(len(agents), len(self.landmarks)))
+        vision_strengths = self.compute_vision_strengths(distances=distances, angles=angles, shape=(len(agents), len(self.landmarks)))
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
     
     def compute_delta_orientations(self, agents):

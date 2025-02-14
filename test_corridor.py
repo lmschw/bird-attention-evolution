@@ -44,47 +44,48 @@ landmarks = [border, landmark_1, landmark_2, landmark_3]
 
 num_iters = 500
 
-for animal_type in [Pigeon(), Hawk(), Zebrafinch(), Zebra(), Wolf(), Rabbit()]:
-    base_save_path = f"corridor_{animal_type.name}"
-    save_path_params = f"log_params_{base_save_path}.csv"
-    save_path_agents = f"log_agents_{base_save_path}.csv"
-    save_path_centroid = f"log_centroid_{base_save_path}.csv"
+for n_agents in [7, 5, 10, 20]:
+        for animal_type in [Pigeon(), Hawk(), Zebrafinch(), Zebra(), Wolf(), Rabbit()]:
+            base_save_path = f"corridor_{animal_type.name}_n={n_agents}"
+            save_path_params = f"log_params_{base_save_path}.csv"
+            save_path_agents = f"log_agents_{base_save_path}.csv"
+            save_path_centroid = f"log_centroid_{base_save_path}.csv"
 
-    model_params = {
-        "n": n_agents,
-        "tmax": n_steps,
-        "domain_size": domain_size,
-        "noise": noise_amplitude,
-        "start_position": start_position,
-        "single_speed": single_speed,
-        "animal_type": animal_type.name,
-        "dist_based_zone_factors": dist_based_zone_factors,
-        "social_weight": social_weight,
-        "environment_weight": environment_weight,
-        "landmarks": "-".join(",".join(f"[{corner[0]},{corner[1]}]" for corner in landmark.corners) for landmark in landmarks)
-    }
+            model_params = {
+                "n": n_agents,
+                "tmax": n_steps,
+                "domain_size": domain_size,
+                "noise": noise_amplitude,
+                "start_position": start_position,
+                "single_speed": single_speed,
+                "animal_type": animal_type.name,
+                "dist_based_zone_factors": dist_based_zone_factors,
+                "social_weight": social_weight,
+                "environment_weight": environment_weight,
+                "landmarks": "-".join(",".join(f"[{corner[0]},{corner[1]}]" for corner in landmark.corners) for landmark in landmarks)
+            }
 
-    logger_params.log_model_params(model_params_dict=model_params, save_path=save_path_params)
-    logger.initialise_log_file_with_headers(['iter', 't', 'i', 'x', 'y', 'h'], save_path=save_path_agents)
-    logger.initialise_log_file_with_headers(['iter', 't', 'x', 'y'], save_path=save_path_centroid)
+            logger_params.log_model_params(model_params_dict=model_params, save_path=save_path_params)
+            logger.initialise_log_file_with_headers(['iter', 't', 'i', 'x', 'y', 'h'], save_path=save_path_agents)
+            logger.initialise_log_file_with_headers(['iter', 't', 'x', 'y'], save_path=save_path_centroid)
 
-    for iter in range(num_iters):
-        print(f"{animal_type.name} - {iter} / {num_iters}")
-        sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
-                            animal_type=animal_type,
-                            domain_size=domain_size,
-                            start_position=start_position,
-                            use_distant_dependent_zone_factors=dist_based_zone_factors,
-                            landmarks=landmarks,
-                            social_weight=social_weight,
-                            environment_weight=environment_weight,
-                            single_speed=single_speed,
-                            visualize=visualize,
-                            visualize_vision_fields=visualize_vision_fields,
-                            follow=follow,
-                            graph_freq=graph_freq,
-                            save_path_agents=save_path_agents,
-                            save_path_centroid=save_path_centroid,
-                            iter=iter)
-        sim.run(tmax=n_steps)
+            for iter in range(num_iters):
+                print(f"{animal_type.name} - {iter} / {num_iters}")
+                sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
+                                    animal_type=animal_type,
+                                    domain_size=domain_size,
+                                    start_position=start_position,
+                                    use_distant_dependent_zone_factors=dist_based_zone_factors,
+                                    landmarks=landmarks,
+                                    social_weight=social_weight,
+                                    environment_weight=environment_weight,
+                                    single_speed=single_speed,
+                                    visualize=visualize,
+                                    visualize_vision_fields=visualize_vision_fields,
+                                    follow=follow,
+                                    graph_freq=graph_freq,
+                                    save_path_agents=save_path_agents,
+                                    save_path_centroid=save_path_centroid,
+                                    iter=iter)
+                sim.run(tmax=n_steps)
 

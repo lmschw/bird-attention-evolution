@@ -373,4 +373,4 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
                 self.save(t=t, prey=prey, predators=predators)
             
         plt.close()
-        return np.array(prey_history), np.array(predator_history)
+        return prey_history, predator_history

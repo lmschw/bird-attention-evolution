@@ -26,6 +26,6 @@ class EvaluatorBasicMovement:
             eplot.create_line_plot(data=data, labels=["average distance to centroid"])
             eplot.plot(metric=Metrics.COHESION)
         if metric in [None, Metrics.ORDER]:
-            data = mf.evaluate_order(data=data)
+            data = mf.evaluate_order(data=self.data)
             eplot.create_line_plot(data=data, labels=["global order"])
             eplot.plot(metric=Metrics.ORDER)

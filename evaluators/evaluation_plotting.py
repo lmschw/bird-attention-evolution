@@ -22,7 +22,7 @@ def create_pie_plot( data, labels):
     plt.legend(patches, labels, loc="best")
 
 def create_bar_plot( data, labels):
-    plt.bar(x=[1, 3, 5], height=data, tick_label=labels)
+    plt.bar(x=[1 + i for i in range(len(data))], height=data, tick_label=labels)
 
 def plot(metric, base_save_path=None, x_label=None, y_label=None, subtitle=None, xlim=None, ylim=None):
     ax = plt.gca()

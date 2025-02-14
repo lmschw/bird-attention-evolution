@@ -35,7 +35,7 @@ class EvaluatorCorridor(EvaluatorBasicMovement):
                 eplot.create_pie_plot(data=data, labels=['same corridor', 'split'])
                 xlim = plt.gca().get_xlim()
                 ylim = plt.gca().get_ylim()
-                self.plot(metric=Metrics.CORRIDOR_DISTRIBUTION, xlim=xlim, ylim=ylim)
+                eplot.plot(metric=Metrics.CORRIDOR_DISTRIBUTION, xlim=xlim, ylim=ylim)
         if metric in [None, Metrics.SUCCESS_PERCENTAGE]:
             if len(self.corridor_endpoints) != 2:
                 print("need to specify the endpoint of the corridors upon instantiation to evaluate CORRIDOR_DISTRIBUTION")
@@ -44,13 +44,13 @@ class EvaluatorCorridor(EvaluatorBasicMovement):
                 eplot.create_pie_plot(data=data, labels=['percentage agents got through', 'percentage agents left behind'])
                 xlim = plt.gca().get_xlim()
                 ylim = plt.gca().get_ylim()
-                self.plot(metric=Metrics.SUCCESS_PERCENTAGE, xlim=xlim, ylim=ylim)
+                eplot.plot(metric=Metrics.SUCCESS_PERCENTAGE, xlim=xlim, ylim=ylim)
         if metric in [None, Metrics.DURATION]:
             if len(self.corridor_endpoints) != 2:
                 print("need to specify the endpoint of the corridors upon instantiation to evaluate CORRIDOR_DISTRIBUTION")
             else:
-                data = mf.evaluate_duration(data=data, corridor_endpoints=self.corridor_endpoints)
+                data = mf.evaluate_duration(data=self.data, corridor_endpoints=self.corridor_endpoints)
                 eplot.create_bar_plot(data=data, labels=['min', 'avg', 'max'])
                 xlim = plt.gca().get_xlim()
                 ylim = plt.gca().get_ylim()
-                self.plot(metric=Metrics.DURATION, xlim=xlim, ylim=ylim)
+                eplot.plot(metric=Metrics.DURATION, xlim=xlim, ylim=ylim)

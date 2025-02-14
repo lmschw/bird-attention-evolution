@@ -53,7 +53,7 @@ def log_results_to_csv(dict_list, save_path):
         for dict in dict_list:
             w.writerow(dict.values())
 
-def load_log_data(filepath, max_iters=None):
+def load_log_data(filepath, max_iters=None, is_predator_scenario=False):
     df = pd.read_csv(filepath)
     if max_iters == None:
         max_iters = df['iter'].max()
@@ -66,7 +66,11 @@ def load_log_data(filepath, max_iters=None):
         tmax = df_iter['t'].max()
         for t in range(tmax):
             df_t = df_iter[df_iter['t'] == t]
-            data_iter.append(np.column_stack((df_t['x'], df_t['y'], df_t['h'])))
+            if is_predator_scenario:
+                df_prey = df_t[df_t['type'] == 'prey']
+                data_iter.append(np.column_stack((df_prey['x'], df_prey['y'], df_prey['h'])))
+            else:
+                data_iter.append(np.column_stack((df_t['x'], df_t['y'], df_t['h'])))
         data.append(data_iter)
     return data
 

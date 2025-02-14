@@ -18,7 +18,10 @@ class EvaluatorBasicMovement:
         self.data_file_path = data_file_path
         self.base_save_path = base_save_path
         self.max_iters = max_iters
-        self.data = logger.load_log_data(self.data_file_path, max_iters=max_iters)
+        self.load_data()
+        
+    def load_data(self):
+        self.data = logger.load_log_data(self.data_file_path, max_iters=self.max_iters)
 
     def evaluate_and_visualise(self, metric=None):
         if metric in [None, Metrics.COHESION]:

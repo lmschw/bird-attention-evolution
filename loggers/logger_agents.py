@@ -21,10 +21,16 @@ def initialise_log_file_with_headers(headers, save_path):
         w = csv.writer(f)
         w.writerow(headers)
 
-def create_dicts(iter, t, agents):
+def create_dicts(iter, t, agents, is_prey=None):
     agents_dicts = []
     for i, agent in enumerate(agents):
-        agents_dicts.append({'iter': iter, 't': t, 'i': i, 'x': agent[0], 'y': agent[1], 'h': agent[2]})
+        if is_prey == None:
+            agents_dicts.append({'iter': iter, 't': t, 'i': i, 'x': agent[0], 'y': agent[1], 'h': agent[2]})
+        elif is_prey:
+            agents_dicts.append({'iter': iter, 't': t, 'type': 'prey', 'i': i, 'x': agent[0], 'y': agent[1], 'h': agent[2]})
+        else:
+            agents_dicts.append({'iter': iter, 't': t, 'type': 'predator', 'i': i, 'x': agent[0], 'y': agent[1], 'h': agent[2]})
+
     return agents_dicts
 
 def create_centroid_dict(iter, t, centroid):

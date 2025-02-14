@@ -5,6 +5,7 @@ import matplotlib.patches as mpatches
 import general.angle_conversion as ac
 import simulator.head_movement.weight_options as wo
 from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator
+import loggers.logger_agents as logger
 
 """
 Implementation of the orientation-perception-free zone model with predators and landmarks.
@@ -17,7 +18,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
                  start_position_predator, pack_hunting=False, landmarks=[], noise_amplitude=0, social_weights=[1,1], environment_weights=[1,1],
                  other_type_weights=[1,1], limit_turns=True, use_distant_dependent_zone_factors=True, single_speed=True, 
                  kill=True, killing_frenzy=False, visualize=True, visualize_vision_fields_prey=0, visualize_vision_fields_predator=0, follow=False, 
-                 graph_freq=5):
+                 graph_freq=5, save_path_agents=None, save_path_centroid=None, iter=0):
         """
         Params:
             - num_prey (int): the number of prey animals within the domain
@@ -56,7 +57,10 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
                          visualize=visualize,
                          visualize_vision_fields=visualize_vision_fields_prey,
                          follow=follow,
-                         graph_freq=graph_freq)
+                         graph_freq=graph_freq,
+                         save_path_agents=save_path_agents,
+                         save_path_centroid=save_path_centroid,
+                         iter=iter)
         
         self.num_prey = num_prey
         self.animal_type_prey = animal_type_prey
@@ -218,6 +222,16 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
 
         plt.pause(0.000001)    
 
+    def save(self, t, prey, predators):
+        if self.save_path_agents:
+            dict_list = logger.create_dicts(iter=self.iter, t=t, agents=prey, is_prey=True)
+            logger.log_results_to_csv(dict_list=dict_list, save_path=self.save_path_agents)
+            dict_list = logger.create_dicts(iter=self.iter, t=t, agents=predators, is_prey=False)
+            logger.log_results_to_csv(dict_list=dict_list, save_path=self.save_path_agents)
+        if self.save_path_centroid:
+            dict = logger.create_centroid_dict(iter=self.iter, t=t, centroid=self.centroid_trajectory[-1])
+            logger.log_results_to_csv([dict], save_path=self.save_path_centroid)
+
     def compute_distances_and_angles_other_type(self, focus_group, other_group):
         """
         Computes the distances and bearings between predator and prey from either point of view.
@@ -345,11 +359,18 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
             if self.kill:
                 prey, predators = self.check_kills(prey=prey, predators=predators)
 
+
+            centroid_x, centroid_y = np.mean(prey[:, 0]), np.mean(prey[:, 1])
+            self.centroid_trajectory.append((centroid_x, centroid_y))
+
             if not (self.current_step % self.graph_freq) and self.visualize and self.current_step > 0:
                 self.graph_agents(prey=prey, predators=predators)
 
             prey_history.append(prey)
             predator_history.append(predators)
+            
+            if self.save_path_agents or self.save_path_centroid:
+                self.save(t=t, prey=prey, predators=predators)
             
         plt.close()
         return np.array(prey_history), np.array(predator_history)

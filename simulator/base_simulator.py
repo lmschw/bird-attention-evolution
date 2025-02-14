@@ -131,8 +131,10 @@ class BaseSimulator:
 
         return distances, angles
     
-    def generate_noise(self):
+    def generate_noise(self, num_agents=None):
         """
         Generates noise.
         """
-        return np.random.normal(scale=self.noise_amplitude, size=self.num_agents)
+        if num_agents == None:
+            num_agents = self.num_agents
+        return np.random.normal(scale=self.noise_amplitude, size=num_agents)

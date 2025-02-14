@@ -55,6 +55,8 @@ def log_results_to_csv(dict_list, save_path):
 
 def load_log_data(filepath, max_iters=None):
     df = pd.read_csv(filepath)
+    if max_iters == None:
+        max_iters = df['iter'].max()
     max_iter = min(df['iter'].max(),max_iters)
     data = []
     for iter in range(max_iter):

@@ -29,14 +29,14 @@ class EvaluatorBasicMovementMulti:
             data.append(logger.load_log_data(path, max_iters=self.max_iters))
         return data
 
-    def evaluate_and_visualise(self, metrics):
+    def evaluate_and_visualise(self, metrics, normalise_cohesion=False):
         for metric in metrics:
             data = []
             for i in range(len(self.data)):
                 subdata = self.data[i]
                 animal_type = self.animal_types[i]
                 if metric == Metrics.COHESION:
-                    data.append(mf.evaluate_cohesion(data=subdata, animal_type=animal_type))
+                    data.append(mf.evaluate_cohesion(data=subdata, animal_type=animal_type, normalised=normalise_cohesion))
                     y_label = 'cohesion (width/average distance from centroid)'
                 if metric == Metrics.ORDER:
                     data.append(mf.evaluate_order(data=subdata))   

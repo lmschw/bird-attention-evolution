@@ -24,9 +24,9 @@ class EvaluatorBasicMovement:
     def load_data(self):
         self.data = logger.load_log_data(self.data_file_path, max_iters=self.max_iters)
 
-    def evaluate_and_visualise(self, metric=None):
+    def evaluate_and_visualise(self, metric=None, normalise_cohesion=False):
         if metric in [None, Metrics.COHESION]:
-            data = mf.evaluate_cohesion(data=self.data, animal_type=self.animal_type)
+            data = mf.evaluate_cohesion(data=self.data, animal_type=self.animal_type, normalised=normalise_cohesion)
             eplot.create_line_plot(data=data, labels=['cohesion (width/average distance from centroid)'])
             eplot.plot(metric=Metrics.COHESION, base_save_path=self.base_save_path, x_label='timesteps', y_label='cohesion (width/average distance from centroid)')
         if metric in [None, Metrics.ORDER]:

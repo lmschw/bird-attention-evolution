@@ -20,13 +20,13 @@ class EvaluatorCorridorMulti(EvaluatorBasicMovementMulti):
         super().__init__(data_file_paths=data_file_paths,
                          data_labels=data_labels,
                          base_save_path=base_save_path,
-                         animal_type=animal_types[0],
+                         animal_types=animal_types,
                          max_iters=max_iters)
         self.animal_types = animal_types
         self.corridor_centers = corridor_centers
         self.corridor_endpoints = corridor_endpoints
 
-    def evaluate_and_visualise(self, metrics):
+    def evaluate_and_visualise(self, metrics, normalise_cohesion=False):
         for metric in metrics:
             data = []
             for i in range(len(self.data)):
@@ -34,7 +34,7 @@ class EvaluatorCorridorMulti(EvaluatorBasicMovementMulti):
                 subdata = self.data[i]
                 match metric:
                     case Metrics.COHESION:
-                        data.append(mf.evaluate_cohesion(data=subdata, animal_type=animal_type))
+                        data.append(mf.evaluate_cohesion(data=subdata, animal_type=animal_type, normalised=normalise_cohesion))
                     case Metrics.ORDER:
                         data.append(mf.evaluate_order(data=subdata))   
                     case Metrics.CORRIDOR_DISTRIBUTION:

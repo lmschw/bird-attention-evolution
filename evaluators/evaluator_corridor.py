@@ -27,8 +27,8 @@ class EvaluatorCorridor(EvaluatorBasicMovement):
         self.corridor_centers = corridor_centers
         self.corridor_endpoints = corridor_endpoints
 
-    def evaluate_and_visualise(self, metric=None):
-        super().evaluate_and_visualise(metric=metric)
+    def evaluate_and_visualise(self, metric=None, normalise_cohesion=False):
+        super().evaluate_and_visualise(metric=metric, normalise_cohesion=normalise_cohesion)
         if metric in [None, Metrics.CORRIDOR_DISTRIBUTION]:
             if len(self.corridor_centers) != 2:
                 print("need to specify exactly two corridors upon instantiation to evaluate CORRIDOR_DISTRIBUTION")

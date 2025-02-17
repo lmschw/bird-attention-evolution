@@ -282,10 +282,13 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         else:
             delta_orientations_landmarks = 0
 
-        if is_prey:
-            delta_orientations_other_type = self.compute_delta_orientations_away_from_predators(prey, predators)
+        if len(prey) > 0 and len(predators) > 0:
+            if is_prey:
+                delta_orientations_other_type = self.compute_delta_orientations_away_from_predators(prey, predators)
+            else:
+                delta_orientations_other_type = self.compute_delta_orientations_towards_prey(prey, predators)
         else:
-            delta_orientations_other_type = self.compute_delta_orientations_towards_prey(prey, predators)
+            delta_orientations_other_type = 0
 
         delta_orientations = agents[:,4] * delta_orientations_conspecifics + agents[:,5] * delta_orientations_landmarks + agents[:,6] * delta_orientations_other_type
         delta_orientations = np.where((delta_orientations > animal_type.max_turn_angle), animal_type.max_turn_angle, delta_orientations)
@@ -317,8 +320,12 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
             prey_orientations = self.compute_new_orientations_for_type(prey, predators, is_prey=True)
         else:
             prey_orientations = prey[:,2]
-        self.num_agents = self.num_predators
-        predators_orientations = self.compute_new_orientations_for_type(prey, predators, is_prey=False)
+        if len(predators) > 0:
+            self.num_agents = self.num_predators
+            predators_orientations = self.compute_new_orientations_for_type(prey, predators, is_prey=False)
+        else:
+            predators_orientations = predators[:,2]
+        
         return prey_orientations, predators_orientations
     
     def check_kills(self, prey, predators):
@@ -326,8 +333,11 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         y_close = np.absolute(prey[:,1]-predators[:,1]) < 1
         close = x_close & y_close
         prey[:,7] = np.where(close, 0, prey[:,7])
-        if not self.killing_frenzy:
-            predators[:,6] = np.where(np.count_nonzero(close) > 0, -1, predators[:,6]) # if they have caught something, they no longer hunt and are therefore not attracted to prey anymore
+        if not self.killing_frenzy and np.count_nonzero(close):
+            prey[:,6] = np.where(np.count_nonzero(close) > 0, 0, prey[:,6]) # if the predator has caught something, it is no longer an immediate danger
+            #predators[:,6] = np.where(np.count_nonzero(close) > 0, -1, predators[:,6]) # if they have caught something, they no longer hunt and are therefore not attracted to prey anymore
+            predators[:,7] = 0
+            print("KILL!!!!!!!!")
         return prey, predators
     
     def run(self, tmax):
@@ -344,6 +354,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
 
             # clean up the prey
             prey = prey[prey[:,7] == 1]
+            predators = predators[predators[:,7] == 1]
 
             self.prey = prey
             self.predators = predators
@@ -356,7 +367,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
             
             prey[:,2], predators[:,2]  = self.compute_new_orientations(prey=prey, predators=predators)
 
-            if self.kill:
+            if self.kill and len(predators) > 0:
                 prey, predators = self.check_kills(prey=prey, predators=predators)
 
 

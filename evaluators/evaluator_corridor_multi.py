@@ -78,6 +78,6 @@ class EvaluatorCorridorMulti(EvaluatorBasicMovementMulti):
             if set_lims:
                 xlim = plt.gca().get_xlim()
                 ylim = plt.gca().get_ylim()
-                eplot.plot(metric=Metrics.CORRIDOR_DISTRIBUTION, base_save_path=self.base_save_path, x_label=x_label, y_label=y_label, xlim=xlim, ylim=ylim)
+                eplot.plot(metric=metric, base_save_path=self.base_save_path, x_label=x_label, y_label=y_label, xlim=xlim, ylim=ylim)
             else:
-                eplot.plot(metric=metric)
+                eplot.plot(metric=metric, base_save_path=self.base_save_path, x_label=x_label, y_label=y_label)

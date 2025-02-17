@@ -26,10 +26,10 @@ def create_dicts(iter, t, agents, is_prey=None):
     for i, agent in enumerate(agents):
         if is_prey == None:
             agents_dicts.append({'iter': iter, 't': t, 'i': i, 'x': agent[0], 'y': agent[1], 'h': agent[2]})
-        elif is_prey:
-            agents_dicts.append({'iter': iter, 't': t, 'type': 'prey', 'i': i, 'x': agent[0], 'y': agent[1], 'h': agent[2]})
+        elif is_prey:                                                                               
+            agents_dicts.append({'iter': iter, 't': t, 'type': 'prey', 'i': i, 'x': agent[0], 'y': agent[1], 'h': agent[2], 'alive': agent[7]})
         else:
-            agents_dicts.append({'iter': iter, 't': t, 'type': 'predator', 'i': i, 'x': agent[0], 'y': agent[1], 'h': agent[2]})
+            agents_dicts.append({'iter': iter, 't': t, 'type': 'predator', 'i': i, 'x': agent[0], 'y': agent[1], 'h': agent[2], 'alive': agent[7]})
 
     return agents_dicts
 
@@ -54,7 +54,7 @@ def log_results_to_csv(dict_list, save_path):
             w.writerow(dict.values())
 
 def load_log_data(filepath, max_iters=None, is_predator_scenario=False):
-    df = pd.read_csv(filepath)
+    df = pd.read_csv(filepath,index_col=False)
     if max_iters == None:
         max_iters = df['iter'].max()
     max_iter = min(df['iter'].max(),max_iters)
@@ -68,7 +68,8 @@ def load_log_data(filepath, max_iters=None, is_predator_scenario=False):
             df_t = df_iter[df_iter['t'] == t]
             if is_predator_scenario:
                 df_prey = df_t[df_t['type'] == 'prey']
-                data_iter.append(np.column_stack((df_prey['x'], df_prey['y'], df_prey['h'])))
+                df_prey = df_prey[df_prey['alive'] == 1]
+                data_iter.append(np.column_stack((df_prey['x'], df_prey['y'], df_prey['h'], df_prey['alive'])))
             else:
                 data_iter.append(np.column_stack((df_t['x'], df_t['y'], df_t['h'])))
         data.append(data_iter)

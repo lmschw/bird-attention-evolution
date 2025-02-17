@@ -44,5 +44,8 @@ def plot(metric, base_save_path=None, x_label=None, y_label=None, subtitle=None,
         plt.title(f"{metric.name}")
     if base_save_path != None:
         plt.savefig(f"{base_save_path}_{metric.value}.svg")
-    #plt.show()
+        plt.savefig(f"{base_save_path}_{metric.value}.pdf")
+        plt.savefig(f"{base_save_path}_{metric.value}.jpeg")
+
+    plt.show()
     plt.close()

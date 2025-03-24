@@ -305,13 +305,15 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         positions += self.dt*(orientations.T * agents[:,3]).T
         return positions[:,0], positions[:,1]
 
-    def run(self, tmax):
+    def run(self, tmax, dt=1):
         """
         Runs the simulation for tmax timesteps
         """
         agent_history = []
         agents = self.initialize()
-        self.dt = 1
+        self.dt = dt
+
+        tmax = int(tmax/dt)
 
         for t in range(tmax):
             self.current_step = t

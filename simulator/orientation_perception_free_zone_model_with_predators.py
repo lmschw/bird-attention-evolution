@@ -329,25 +329,28 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         return prey_orientations, predators_orientations
     
     def check_kills(self, prey, predators):
-        x_close = np.absolute(prey[:,0]-predators[:,0]) < 1
-        y_close = np.absolute(prey[:,1]-predators[:,1]) < 1
+        x_close = np.absolute(prey[:,0]-predators[:,0]) < 5
+        y_close = np.absolute(prey[:,1]-predators[:,1]) < 5
         close = x_close & y_close
         prey[:,7] = np.where(close, 0, prey[:,7])
         if not self.killing_frenzy and np.count_nonzero(close):
             prey[:,6] = np.where(np.count_nonzero(close) > 0, 0, prey[:,6]) # if the predator has caught something, it is no longer an immediate danger
-            #predators[:,6] = np.where(np.count_nonzero(close) > 0, -1, predators[:,6]) # if they have caught something, they no longer hunt and are therefore not attracted to prey anymore
-            predators[:,7] = 0
-            print("KILL!!!!!!!!")
+            predators[:,6] = np.where(np.count_nonzero(close) > 0, -1, predators[:,6]) # if they have caught something, they no longer hunt and are therefore not attracted to prey anymore
+            #predators[:,7] = 0
+            print(f"{self.current_step} - KILL!!!!!!!!")
         return prey, predators
     
-    def run(self, tmax):
+    def run(self, tmax, dt=1):
         """
         Runs the simulation for tmax timesteps
         """
         prey_history = []
         predator_history = []
         prey, predators = self.initialize()
-        self.dt = 1
+        self.dt = dt
+        tmax = int(tmax/dt)
+
+        print(tmax)
 
         for t in range(tmax):
             self.current_step = t

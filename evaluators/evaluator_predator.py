@@ -16,5 +16,10 @@ Evaluation plots:
 
 class EvaluatorPredator(EvaluatorBasicMovement):
     def load_data(self):
-        self.data = logger.load_log_data(self.data_file_path, max_iters=self.max_iters, is_predator_scenario=True)
+        self.data, self.predator_data = logger.load_log_data(self.data_file_path, max_iters=self.max_iters, is_predator_scenario=True, load_predator=True)
 
+    def evaluate_and_visualise(self, metric=None, normalise_cohesion=False):
+        if metric in [None, Metrics.SPLIT_TURN]:
+            data = mf.evaluate_splits_and_turns(prey_data=self.data, predator_data=self.predator_data)
+            eplot.create_bar_plot(data=data, labels=['splits', 'turns', 'avg angle splits', 'avg angle turns'])
+            eplot.plot(metric=Metrics.SPLIT_TURN, base_save_path=self.base_save_path, x_label='timesteps', y_label='')

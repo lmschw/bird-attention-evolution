@@ -9,19 +9,20 @@ import vision.perception_strength as pstrength
 import loggers.logger_agents as logger
 
 from simulator.base_simulator import BaseSimulator
+from simulator.enum_neighbour_selection import NeighbourSelectionMechanism
 
 """
 Implementation of the orientation-perception-free zone model with landmarks.
 """
 
-REPULSION_FACTOR = 1
+REPULSION_FACTOR = 50
 
 class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
     def __init__(self, num_agents, animal_type, domain_size, start_position, landmarks=[],
                  noise_amplitude=0, social_weight=1, environment_weight=1, limit_turns=True, 
-                 use_distant_dependent_zone_factors=True, single_speed=True, visualize=True, 
-                 visualize_vision_fields=0, follow=False, graph_freq=5, save_path_agents=None, 
-                 save_path_centroid=None, iter=0):
+                 use_distant_dependent_zone_factors=True, single_speed=True, neighbour_selection=None, 
+                 k=None, visualize=True, visualize_vision_fields=0, follow=False, graph_freq=5, 
+                 save_path_agents=None, save_path_centroid=None, iter=0):
         """
         Params:
             - num_agents (int): the number of animals within the domain
@@ -54,6 +55,8 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         self.limit_turns = limit_turns
         self.use_distant_dependent_zone_factors = use_distant_dependent_zone_factors
         self.single_speed = single_speed
+        self.neighbour_selection = neighbour_selection
+        self.k = k
         self.visualize_vision_fields = visualize_vision_fields
         self.save_path_agents = save_path_agents
         self.save_path_centroid = save_path_centroid
@@ -250,6 +253,21 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
             animal_type = self.animal_type
         return pstrength.compute_perception_strengths(distances=distances, angles=angles, shape=shape, animal_type=animal_type)
 
+    def get_neighbours(self, vision_strengths, distances):
+        neighbours = vision_strengths > 0
+        if self.neighbour_selection:
+            if self.neighbour_selection == NeighbourSelectionMechanism.NEAREST:
+                dists = np.where(neighbours, distances, np.inf)
+                selected = np.argmin(dists, axis=1)[:self.k]
+            else:
+                dists = np.where(neighbours, distances, 0)
+                selected = np.argmax(dists, axis=1)[:self.k]
+            new_neighbours = np.full((self.num_agents, self.num_agents), False)
+            new_neighbours[selected] = True
+            return new_neighbours
+        return neighbours    
+            
+
     def compute_delta_orientations_conspecifics(self, agents):
         """
         Computes the orientation difference that is caused by the conspecifics.
@@ -258,7 +276,8 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         match_factors = self.compute_conspecific_match_factors(distances=distances)
         side_factors = self.compute_side_factors(angles, shape=(len(agents), len(agents)))
         vision_strengths = self.compute_vision_strengths(distances=distances, angles=angles, shape=(len(agents), len(agents)))
-        return np.sum(match_factors * side_factors * vision_strengths, axis=1), distances, angles, vision_strengths
+        neighbours = self.get_neighbours(vision_strengths, distances)
+        return np.sum(match_factors * side_factors * vision_strengths * neighbours, axis=1), distances, angles, vision_strengths
     
     def compute_delta_orientations_landmarks(self, agents):
         """

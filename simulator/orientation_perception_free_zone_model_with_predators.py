@@ -17,6 +17,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
     def __init__(self, num_prey, animal_type_prey, num_predators, animal_type_predator, domain_size, start_position_prey, 
                  start_position_predator, pack_hunting=False, landmarks=[], noise_amplitude=0, social_weights=[1,1], environment_weights=[1,1],
                  other_type_weights=[1,1], limit_turns=True, use_distant_dependent_zone_factors=True, single_speed=True, 
+                 neighbour_selection=None, k=None,
                  kill=True, killing_frenzy=False, visualize=True, visualize_vision_fields_prey=0, visualize_vision_fields_predator=0, follow=False, 
                  graph_freq=5, save_path_agents=None, save_path_centroid=None, iter=0):
         """
@@ -54,6 +55,8 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
                          limit_turns=limit_turns,
                          use_distant_dependent_zone_factors=use_distant_dependent_zone_factors,
                          single_speed=single_speed,
+                         neighbour_selection=neighbour_selection,
+                         k=k,
                          visualize=visualize,
                          visualize_vision_fields=visualize_vision_fields_prey,
                          follow=follow,

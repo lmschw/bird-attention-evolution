@@ -7,12 +7,12 @@ from neural_network.fully_connected_layer import FullyConnectedLayer
 from neural_network.neural_network import NeuralNetwork
 import neural_network.activation_functions as snn
 
-from genetic.metrics import Metrics
-import genetic.metrics_functions as metfunc
+from evaluators.metrics import Metrics
+import evaluators.metrics_functions as metfunc
 import general.normalisation as normal
 import loggers.logger_evolution as logger_evolution
 
-from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator
+from simulator.head_movement.orientation_perception_free_zone_model_with_head_movement import OrientationPerceptionFreeZoneModelWithHeadMovementSimulator
 from animal_models.pigeon import Pigeon
 
 """
@@ -96,10 +96,10 @@ class DifferentialEvolution:
                 case Metrics.ORDER:
                     timestep_results.append(1-metfunc.compute_global_order(result[t])) # for minimisation
                 case Metrics.COHESION:
-                    timestep_results.append(metfunc.compute_cohesion(result[t]))
+                    timestep_results.append(metfunc.compute_cohesion(result[t], animal_type=self.animal_type))
                 case Metrics.COHESION_AND_ORDER:
                     order = 1-metfunc.compute_global_order(result[t]) # for minimisation
-                    cohesion = metfunc.compute_cohesion(result[t])
+                    cohesion = metfunc.compute_cohesion(result[t], animal_type=self.animal_type)
                     timestep_results.append(order*cohesion)
         return np.average(timestep_results)
 
@@ -112,16 +112,13 @@ class DifferentialEvolution:
         weights = self.update_weights(weights)
         model = self.create_neural_network(weights=weights)
         for i in range(self.num_iterations_per_individual):
-            simulator = OrientationPerceptionFreeZoneModelSimulator(
-                                        num_agents=self.num_agents,
-                                        animal_type=self.animal_type,
-                                        domain_size=self.domain_size,
-                                        start_position=(0,0),
-                                        social_weight=1,
-                                        environment_weight=0,
-                                        weight_options=self.weight_options,
-                                        model=model,
-                                        visualize=False)
+            simulator = OrientationPerceptionFreeZoneModelWithHeadMovementSimulator(num_agents=self.num_agents,
+                                                                                    animal_type=self.animal_type,
+                                                                                    domain_size=self.domain_size,
+                                                                                    start_position=(self.domain_size[0]/2, self.domain_size[1]/2),
+                                                                                    weight_options=self.weight_options,
+                                                                                    model=model,
+                                                                                    visualize=False)
             result = simulator.run(tmax=self.tmax)
             results.append(self.evaluate_result(result))
         fitness = np.average(results)

@@ -4,7 +4,7 @@ from simulator.head_movement.enum_weight_options import WeightOptions
 from animal_models.pigeon import Pigeon
 
 from genetic.genetic_algorithm_opfzm import DifferentialEvolution
-from genetic.metrics import Metrics
+from evaluators.metrics import Metrics
 
 import loggers.logger_evolution as logger_evolution
 import loggers.logger_model_params as logger_params
@@ -20,11 +20,11 @@ weight_options = [WeightOptions.CLOSEST_DISTANCES,
 len_weights = len(weight_options)
 
 n_agents = 7
-n_steps = 10000
-domain_size = (50, 50)
-start_position = (25, 25)
+n_steps = 1000
+domain_size = (500, 500)
+start_position = (250, 250)
 graph_freq = 10
-visualize = True
+visualize = False
 visualize_vision_fields = 1
 follow = True
 single_speed = True
@@ -36,9 +36,9 @@ path_weight = 0
 
 num_iters = 25
 num_gens = 30
-num_ind = 10
+num_ind = 1
 use_norm = True
-pop_size = 30
+pop_size = 10
 bounds = [0,1]
 metric = Metrics.COHESION
 
@@ -50,7 +50,7 @@ model_params = {'num_agents': n_agents,
                 'weight_options': [option.value for option in weight_options],
                 'metric': metric.value}
 
-postfix = f"_test_tmax={n_steps}_n={n_agents}_bt={animal_type.name}_domain={domain_size}_m={metric.value}"
+postfix = f"_test_opfzm_tmax={n_steps}_n={n_agents}_bt={animal_type.name}_domain={domain_size}_m={metric.value}"
 save_path_best = f"best{postfix}.csv"
 save_path_best_normalised = f"best{postfix}_normalised.csv"
 save_path_general = f"all{postfix}"

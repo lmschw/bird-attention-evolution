@@ -4,9 +4,9 @@ import matplotlib.patches as mpatches
 
 import general.normalisation as normal
 import general.angle_conversion as ac
-import simulator.head_movement.weight_options as wo
 
 from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator
+import simulator.head_movement.head_movement as hm
 
 """
 Implementation of the orientation-perception-free zone model with landmarks.
@@ -127,17 +127,6 @@ class OrientationPerceptionFreeZoneModelWithHeadMovementSimulator(OrientationPer
             self.ax.set_ylim(0, self.domain_size[1])
 
         plt.pause(0.000001)
-
-    def move_heads(self, agents, distances, angles, perception_strengths_conspecifics):
-        """
-        Moves the heads of all agents based on the output of the neural network model.
-        """
-        inputs = np.array([wo.get_input_value_for_weight_option(weight_option=option, bearings=agents[:,4], distances=distances, angles=angles, perception_strengths=perception_strengths_conspecifics) for option in self.weight_options])
-        inputs = np.where(inputs == np.inf, wo.MAX_INPUT, inputs)
-        new_head_angles = []
-        for i in range(self.num_agents):
-            new_head_angles.append(self.model.predict([inputs[:,i]])[0][0][0])
-        return new_head_angles
     
     def compute_vision_strengths(self, head_orientations, distances, angles, shape, animal_type=None):
         """
@@ -205,7 +194,13 @@ class OrientationPerceptionFreeZoneModelWithHeadMovementSimulator(OrientationPer
 
         new_orientations = ac.wrap_to_pi(agents[:,2] + delta_orientations)
         if self.model:
-            new_head_orientations = self.move_heads(agents=agents, distances=distances, angles=angles, perception_strengths_conspecifics=vision_strengths)
+            new_head_orientations = hm.move_heads(model=self.model, 
+                                                  weight_options=self.weight_options, 
+                                                  num_agents=self.num_agents, 
+                                                  current_head_angles=agents[:,4], 
+                                                  distances=distances, 
+                                                  angles=angles, 
+                                                  perception_strengths_conspecifics=vision_strengths)
         else:
             new_head_orientations = agents[:,4]
         return new_orientations, new_head_orientations

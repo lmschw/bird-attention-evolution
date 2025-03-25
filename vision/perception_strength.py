@@ -9,7 +9,7 @@ Contains methods to compute perception strengths.
 
 DIST_MOD = 0.001
 
-def compute_perception_strengths(distances, angles, shape, animal_type):
+def compute_perception_strengths(distances, angles, shape, animal_type, head_orientations=[]):
     """
     Computes the perception strengths based on the bearings, distances and animal_type provided.
     """
@@ -19,10 +19,14 @@ def compute_perception_strengths(distances, angles, shape, animal_type):
         dist_min = focus_area.comfortable_distance[0]
         dist_max = focus_area.comfortable_distance[1]
 
-        angles_2_pi = ac.wrap_to_2_pi(angles)
 
-        f_angle = ac.wrap_to_2_pi(focus_area.azimuth_angle_position_horizontal)
-        focus_angle = np.reshape(np.concatenate([[f_angle] * shape[0] for i in range(shape[1])]), shape)
+        angles_2_pi = ac.wrap_to_2_pi(angles)
+        if len(head_orientations) > 0:
+            f_angle = ac.wrap_to_2_pi(focus_area.azimuth_angle_position_horizontal + head_orientations)
+            focus_angle = np.reshape(np.repeat(f_angle, shape[0]), shape)
+        else:
+            f_angle = ac.wrap_to_2_pi(focus_area.azimuth_angle_position_horizontal)
+            focus_angle = np.reshape(np.concatenate([[f_angle] * shape[0] for i in range(shape[1])]), shape)
         angle_diffs_focus = angles_2_pi - focus_angle
 
         perception_strengths = 1 - (np.absolute(angle_diffs_focus)/focus_area.angle_field_horizontal)

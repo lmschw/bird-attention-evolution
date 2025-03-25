@@ -7,7 +7,7 @@ Describes the type of input data to the neural network updating the head directi
 
 MAX_INPUT = 1_000_000
 
-def get_input_value_for_weight_option(weight_option, bearings, distances, angles, perception_strengths):
+def get_input_value_for_weight_option(weight_option, current_head_angles, distances, angles, perception_strengths):
     closest_neighbour = np.argmin(distances, axis=1)
     match weight_option:
         case WeightOptions.CLOSEST_DISTANCES:
@@ -26,7 +26,7 @@ def get_input_value_for_weight_option(weight_option, bearings, distances, angles
             num_visible_agents = np.count_nonzero(perception_strengths, axis=1)
             return num_visible_agents
         case WeightOptions.PREVIOUS_HEAD_ANGLES:
-            previous_head_angles = bearings
+            previous_head_angles = current_head_angles
             return previous_head_angles
         case WeightOptions.AVG_PERCEPTION_STRENGTHS:
             average_perception_strengths = np.average(perception_strengths, axis=1)

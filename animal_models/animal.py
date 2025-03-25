@@ -17,8 +17,8 @@ sensing_range                   -   float               -   how far the animal c
 class Animal:
     # TODO implement energy level
     def __init__(self, name, speeds, width, length, head_range_half, max_turn_angle,
-                 focus_areas, preferred_distance_front_back, preferred_distance_left_right,
-                 sensing_range):
+                 focus_areas, foveal_acuity, fovea_discount_factor, preferred_distance_front_back, 
+                 preferred_distance_left_right, sensing_range):
         self.name = name
         self.speeds = speeds
         self.width = width
@@ -26,6 +26,8 @@ class Animal:
         self.head_range_half = head_range_half
         self.max_turn_angle = max_turn_angle
         self.focus_areas = focus_areas
+        self.foveal_acuity = foveal_acuity
+        self.fovea_discount_factor = fovea_discount_factor
         self.preferred_distance_front_back = preferred_distance_front_back
         self.preferred_distance_left_right = preferred_distance_left_right
         self.sensing_range = sensing_range

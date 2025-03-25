@@ -23,7 +23,7 @@ HEAD_RANGE_HALF = np.deg2rad(120)
 MAX_TURN_ANGLE = np.deg2rad(180)
 PREFERRED_DISTANCE_FRONT_BACK = [LENGTH + 0.1, 2 * LENGTH] # WARNING: THIS IS AN ASSUMPTION
 PREFERRED_DISTANCE_LEFT_RIGHT = [2* WIDTH + 2, 4 * WIDTH + 1]  # WARNING: THIS IS AN ASSUMPTION
-SENSING_RANGE = 3000
+SENSING_RANGE = 2000
 
 FOVEAL_REGION_NAME = "foveal_region_right"
 FOVEAL_REGION_AZIMUTH_HORIZONTAL = np.deg2rad(12.5)
@@ -31,10 +31,13 @@ FOVEAL_REGION_FIELD_HORIZONTAL_HALF = np.deg2rad(100)
 FOVEAL_REGION_AZIMUTH_VERTICAL = np.deg2rad(0)
 FOVEAL_REGION_FIELD_VERTICAL_HALF = np.deg2rad(2)
 FOVEAL_REGION_COMFORTABLE_DISTANCE = (0, 45)
+FOVEAL_REGION_FOVEAL_ANGLE = np.deg2rad(40)
 FOVEAL_REGION_RIGHT = FocusArea(name=FOVEAL_REGION_NAME, 
                           azimuth_angle_position_horizontal=FOVEAL_REGION_AZIMUTH_HORIZONTAL,
+                          angle_fovea_horizontal=FOVEAL_REGION_FOVEAL_ANGLE,
                           angle_field_horizontal=FOVEAL_REGION_FIELD_HORIZONTAL_HALF,
                           azimuth_angle_position_vertical=FOVEAL_REGION_AZIMUTH_VERTICAL,
+                          angle_fovea_vertical=FOVEAL_REGION_FOVEAL_ANGLE,
                           angle_field_vertical=FOVEAL_REGION_AZIMUTH_VERTICAL,
                           comfortable_distance=FOVEAL_REGION_COMFORTABLE_DISTANCE
                           )
@@ -45,15 +48,20 @@ FOVEAL_REGION_FIELD_HORIZONTAL_HALF = np.deg2rad(100)
 FOVEAL_REGION_AZIMUTH_VERTICAL = np.deg2rad(0)
 FOVEAL_REGION_FIELD_VERTICAL_HALF = np.deg2rad(2)
 FOVEAL_REGION_COMFORTABLE_DISTANCE = (0, 45)
+FOVEAL_REGION_FOVEAL_ANGLE = np.deg2rad(40)
 FOVEAL_REGION_LEFT = FocusArea(name=FOVEAL_REGION_NAME, 
                           azimuth_angle_position_horizontal=FOVEAL_REGION_AZIMUTH_HORIZONTAL,
+                          angle_fovea_horizontal=FOVEAL_REGION_FOVEAL_ANGLE,
                           angle_field_horizontal=FOVEAL_REGION_FIELD_HORIZONTAL_HALF,
                           azimuth_angle_position_vertical=FOVEAL_REGION_AZIMUTH_VERTICAL,
+                          angle_fovea_vertical=FOVEAL_REGION_FOVEAL_ANGLE,
                           angle_field_vertical=FOVEAL_REGION_AZIMUTH_VERTICAL,
                           comfortable_distance=FOVEAL_REGION_COMFORTABLE_DISTANCE
                           )
 
 FOCUS_AREAS = [FOVEAL_REGION_LEFT, FOVEAL_REGION_RIGHT]
+FOVEAL_ACUITY = 0.8
+FOVEA_DISCOUNT_FACTOR = 0.6
 
 class Wolf(Animal):
     def __init__(self):
@@ -64,6 +72,8 @@ class Wolf(Animal):
                          head_range_half=HEAD_RANGE_HALF,
                          max_turn_angle=MAX_TURN_ANGLE,
                          focus_areas=FOCUS_AREAS, 
+                         foveal_acuity=FOVEAL_ACUITY,
+                         fovea_discount_factor=FOVEA_DISCOUNT_FACTOR,
                          preferred_distance_front_back=PREFERRED_DISTANCE_FRONT_BACK,
                          preferred_distance_left_right=PREFERRED_DISTANCE_LEFT_RIGHT,
                          sensing_range=SENSING_RANGE)

@@ -11,11 +11,13 @@ angle_field_vertical                -   float[rad]          -   the vertical ang
 comfortable_distance                -   array of floats [m] -   the comfortable viewing distance for this focus area. Entities between the min and max will be more in focus
 """
 class FocusArea:
-    def __init__(self, name, azimuth_angle_position_horizontal, angle_field_horizontal,  
-                 azimuth_angle_position_vertical, angle_field_vertical, comfortable_distance):
+    def __init__(self, name, azimuth_angle_position_horizontal, angle_fovea_horizontal, angle_field_horizontal,  
+                 azimuth_angle_position_vertical, angle_fovea_vertical, angle_field_vertical, comfortable_distance):
         self.name = name
         self.azimuth_angle_position_horizontal = azimuth_angle_position_horizontal
+        self.angle_fovea_horizontal = angle_fovea_horizontal
         self.angle_field_horizontal = angle_field_horizontal
         self.azimuth_angle_position_vertical = azimuth_angle_position_vertical
         self.angle_field_vertical = angle_field_vertical
+        self.angle_fovea_vertical = angle_fovea_vertical
         self.comfortable_distance = comfortable_distance

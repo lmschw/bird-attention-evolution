@@ -30,7 +30,10 @@ def compute_perception_strengths(distances, angles, shape, animal_type):
         vision_strengths = np.zeros(shape)
         # if the agent is within the cone of the field of vision, it is perceived
         vision_strengths = np.where(np.absolute(angle_diffs_focus) <= focus_area.angle_field_horizontal, perception_strengths, vision_strengths)
-        
+
+        # if the agent is within the foveal region, it is observed with full acuity, outside it can be blurry
+        vision_strengths = np.where((np.absolute(distances) > focus_area.angle_fovea_horizontal), animal_type.fovea_discount_factor * vision_strengths, animal_type.foveal_acuity * vision_strengths)
+      
         # if an agent is outside of the comfortable viewing distance, it is perceived but with a very low percentage
         vision_strengths = np.where(np.absolute(distances) < dist_min, DIST_MOD * vision_strengths, vision_strengths)
         vision_strengths = np.where(((np.absolute(distances) > dist_max)&(np.absolute(distances) <=dist_absmax)), DIST_MOD * vision_strengths, vision_strengths)

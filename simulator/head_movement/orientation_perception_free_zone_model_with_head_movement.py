@@ -196,6 +196,7 @@ class OrientationPerceptionFreeZoneModelWithHeadMovementSimulator(OrientationPer
         if self.model:
             new_head_orientations = hm.move_heads(model=self.model, 
                                                   weight_options=self.weight_options, 
+                                                  animal_type=self.animal_type,
                                                   num_agents=self.num_agents, 
                                                   current_head_angles=agents[:,4], 
                                                   distances=distances, 

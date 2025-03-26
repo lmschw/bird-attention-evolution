@@ -10,7 +10,7 @@ class FullyConnectedLayer:
     # returns output for a given input
     def forward_propagation(self, input_data):
         self.input = input_data
-        self.output = np.dot(self.input, self.weights) + self.bias
+        self.output = np.array(self.input) * np.array(self.weights).T + self.bias
         return self.output
 
     # computes dE/dW, dE/dB for a given output_error=dE/dY. Returns input_error=dE/dX.

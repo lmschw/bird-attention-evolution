@@ -119,6 +119,7 @@ class ActiveElasticWithPerceptionStrengthAndHeadMovementSimulator(ActiveElasticS
         self.curr_agents[:, 2] = ac.wrap_to_pi(self.curr_agents[:, 2] + w * DT)
         self.curr_agents[:, 3] = hm.move_heads(model=self.model,
                                                weight_options=self.weight_options,
+                                               animal_type=self.animal_type,
                                                num_agents=self.num_agents,
                                                current_head_angles=self.curr_agents[:,3],
                                                distances=distances,

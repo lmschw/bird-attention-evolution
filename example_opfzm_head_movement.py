@@ -29,8 +29,9 @@ weight_options = [WeightOptions.CLOSEST_DISTANCES,
                   WeightOptions.AVG_PERCEPTION_STRENGTHS]
 weight_size = len(weight_options)
 output_size = 1
+weights = [0.04894279039946401,0.00667812943656855,0.10353310279886091,0.21765670588565983,0.20047645873708853,0.20505610685669823,0.21765670588565983]
 
-weights = [0, 0, 0, 0, 0, 0, 0]
+#weights = [0, 0, 0, 0, 0, 0, 0]
 
 nn = NeuralNetwork()
 fully_connected_layer = FullyConnectedLayer(input_size=weight_size, output_size=output_size)
@@ -46,7 +47,7 @@ start_position = (250, 20)
 graph_freq = 10
 visualize = True
 visualize_vision_fields = 0
-visualize_head_directions = False
+visualize_head_directions = True
 follow = True
 single_speed = True
 animal_type = Pigeon()
@@ -63,6 +64,7 @@ landmark_3 = Landmark('3', corners=[[20, 20], [20, 25], [25, 25], [25, 20]])
 
 
 landmarks = [landmark_1, landmark_2, landmark_3]
+landmarks = []
 
 sim = OrientationPerceptionFreeZoneModelWithHeadMovementSimulator(num_agents=n_agents,
                       animal_type=animal_type,

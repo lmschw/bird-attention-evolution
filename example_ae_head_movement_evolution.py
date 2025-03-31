@@ -10,13 +10,13 @@ import loggers.logger_evolution as logger_evolution
 import loggers.logger_model_params as logger_params
 import general.normalisation as normal
 
-weight_options = [WeightOptions.CLOSEST_DISTANCES,
-                  WeightOptions.CLOSEST_BEARINGS,
-                  WeightOptions.AVG_DISTANCES,
-                  WeightOptions.AVG_BEARINGS,
+weight_options = [
                   WeightOptions.NUM_VISIBLE_AGENTS,
                   WeightOptions.PREVIOUS_HEAD_ANGLES,
-                  WeightOptions.AVG_PERCEPTION_STRENGTHS]
+                  WeightOptions.AVG_PERCEPTION_STRENGTHS,
+                  WeightOptions.RANDOM
+                  ]
+
 len_weights = len(weight_options)
 
 n_agents = 7
@@ -38,7 +38,7 @@ num_iters = 25
 num_gens = 30
 num_ind = 1
 use_norm = True
-pop_size = 10
+pop_size = 30
 bounds = [0,1]
 metric = Metrics.COHESION
 

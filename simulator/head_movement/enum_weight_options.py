@@ -12,4 +12,5 @@ class WeightOptions(str, Enum):
     AVG_BEARINGS = "average_bearings"
     NUM_VISIBLE_AGENTS = "num_visible_agents"
     PREVIOUS_HEAD_ANGLES = "previous_head_angles"
-    AVG_PERCEPTION_STRENGTHS = "average_perception_strengths"
+    AVG_PERCEPTION_STRENGTHS = "average_perception_strengths",
+    RANDOM = "random"

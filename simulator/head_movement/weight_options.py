@@ -1,4 +1,5 @@
 import numpy as np
+import random
 from simulator.head_movement.enum_weight_options import WeightOptions
 
 """
@@ -31,3 +32,5 @@ def get_input_value_for_weight_option(weight_option, current_head_angles, distan
         case WeightOptions.AVG_PERCEPTION_STRENGTHS:
             average_perception_strengths = np.average(perception_strengths, axis=1)
             return average_perception_strengths
+        case WeightOptions.RANDOM:
+            return np.random.uniform(0, 2*np.pi, (len(distances)))

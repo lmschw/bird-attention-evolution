@@ -141,7 +141,9 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         Computes the distances and bearings between the agents.
         """
         x_diffs = xx1 - xx2
+        x_diffs = x_diffs.astype(float)
         y_diffs = yy1 - yy2
+        y_diffs = y_diffs.astype(float)
         distances = np.sqrt(np.multiply(x_diffs, x_diffs) + np.multiply(y_diffs, y_diffs))  
         distances[distances > self.animal_type.sensing_range] = np.inf
         distances[distances == 0.0] = np.inf
@@ -183,7 +185,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         """
         Computes the distances and bearings between the agents and the landmarks.
         """
-        nearest_points = np.array(self.compute_nearest_points_to_landmarks(agents=agents))
+        nearest_points = np.array(self.compute_nearest_points_to_landmarks(agents=agents), dtype=float)
         pos_xs = agents[:, 0]
         pos_ys = agents[:, 1]
 

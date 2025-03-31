@@ -73,6 +73,7 @@ def compute_u_v_coordinates_for_angles(angles):
         An array containing the [u, v]-coordinates corresponding to the angle.
     """
     # compute the uv-coordinates
+    angles = angles.astype(float)
     U = np.cos(angles)
     V = np.sin(angles)
 

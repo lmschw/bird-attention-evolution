@@ -4,7 +4,7 @@ from area_models.landmark import Landmark
 from simulator.enum_switchtype import SwitchType
 from simulator.enum_neighbour_selection import NeighbourSelectionMechanism
 
-n_agents = 10
+n_agents = 20
 n_steps = 10000
 domain_size = (500, 500)
 noise_amplitude = 0
@@ -36,7 +36,7 @@ threshold = 0.1
 num_previous_steps= 100
 k = 1
 
-num_ideal_neighbours = 9
+num_ideal_neighbours = n_agents -1
 stress_delta = 0.05
 
 sim = OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(num_agents=n_agents,

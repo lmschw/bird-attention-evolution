@@ -21,7 +21,7 @@ REPULSION_FACTOR = 50
 
 class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationPerceptionFreeZoneModelSimulator):
 
-    def __init__(self, num_agents, animal_type, domain_size, start_position, switch_type, switch_options, threshold,
+    def __init__(self, num_agents, animal_type, domain_size, start_position, switch_type=None, switch_options=[], threshold=0,
                  num_previous_steps=100, stress_delta=0.05, num_ideal_neighbours=9, landmarks=[], noise_amplitude=0, 
                  social_weight=1, environment_weight=1, limit_turns=True, use_distant_dependent_zone_factors=True, 
                  single_speed=True, neighbour_selection=None, k=None, visualize=True, visualize_vision_fields=0, 
@@ -32,8 +32,11 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
                          graph_freq, save_path_agents, save_path_centroid, iter)
         self.switch_type = switch_type
         self.switch_options = switch_options
-        self.disorder_value = switch_options[0]
-        self.order_value = switch_options[1]
+        if len(switch_options) > 0:
+            self.disorder_value = switch_options[0]
+            self.order_value = switch_options[1]
+        elif switch_type:
+            raise Exception("Switch options need to be specified to use switching")
         self.disorder_placeholder = 0
         self.order_placeholder = 1
         self.threshold = threshold
@@ -51,16 +54,19 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
         else:
             speeds = np.random.uniform(self.animal_type.speeds[0], self.animal_type.speeds[2], self.num_agents)
 
-        if self.switch_type == SwitchType.NEIGHBOUR_SELECTION_MECHANISM:
-            if self.neighbour_selection == self.order_value:
-                switchVals = np.full(self.num_agents, self.order_placeholder)
+        if self.switch_type:
+            if self.switch_type == SwitchType.NEIGHBOUR_SELECTION_MECHANISM:
+                if self.neighbour_selection == self.order_value:
+                    switchVals = np.full(self.num_agents, self.order_placeholder)
+                else:
+                    switchVals = np.full(self.num_agents, self.disorder_placeholder)
             else:
-                switchVals = np.full(self.num_agents, self.disorder_placeholder)
+                if self.k == self.order_value:
+                    switchVals = np.full(self.num_agents, self.order_placeholder)
+                else:
+                    switchVals = np.full(self.num_agents, self.disorder_placeholder)
         else:
-            if self.k == self.order_value:
-                switchVals = np.full(self.num_agents, self.order_placeholder)
-            else:
-                switchVals = np.full(self.num_agents, self.disorder_placeholder)
+            switchVals = np.full(self.num_agents, self.order_placeholder)
 
         stress_levels = np.zeros(self.num_agents)
 
@@ -142,8 +148,9 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
                 else:
                     vals_order = self.get_selected(neighbour_selection=self.neighbour_selection, k=self.order_value, neighbours=neighbours, distances=distances)
                     vals_disorder = self.get_selected(neighbour_selection=self.neighbour_selection, k=self.disorder_value, neighbours=neighbours, distances=distances)
-
-            selected = np.where(decisions == self.order_placeholder, vals_order, vals_disorder)
+                selected = np.where(decisions == self.order_placeholder, vals_order, vals_disorder)
+            else:
+                selected = self.get_selected(neighbour_selection=self.neighbour_selection, k=self.k, neighbours=neighbours, distances=distances)
 
             new_neighbours = np.full((self.num_agents, self.num_agents), False)
             new_neighbours[selected] = True
@@ -152,14 +159,16 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
     
     def compute_stress_levels(self, agents, neighbours):
         num_neighbours = np.count_nonzero(neighbours, axis=1)
-        if self.current_step % 100 == 0:
-            print(f"{self.current_step}: {num_neighbours}")
+        # if self.current_step % 100 == 0:
+        #     print(f"{self.current_step}: {num_neighbours}")
         stress_levels = agents[:,5]
         stress_levels = np.where(num_neighbours > self.num_ideal_neighbours, stress_levels - self.stress_delta, stress_levels)
         stress_levels = np.where(num_neighbours < self.num_ideal_neighbours, stress_levels + self.stress_delta, stress_levels)
         return stress_levels
     
     def get_decisions(self, agents, neighbours, stress_levels):
+        if self.switch_type == None:
+            return agents[:,4]
         local_orders = mf.compute_local_orders(agents=agents, neighbours=neighbours)
         self.local_order_history.append(local_orders)
         eval_vals = local_orders + stress_levels

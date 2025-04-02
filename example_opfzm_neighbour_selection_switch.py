@@ -6,13 +6,13 @@ from simulator.enum_neighbour_selection import NeighbourSelectionMechanism
 
 n_agents = 10
 n_steps = 10000
-domain_size = (5000, 5000)
+domain_size = (500, 500)
 noise_amplitude = 0
-start_position = (2500, 2500)
+start_position = (250, 250)
 graph_freq = 10
 visualize = True
 visualize_vision_fields = 0
-follow = False
+follow = True
 single_speed = True
 animal_type = Pigeon()
 
@@ -29,13 +29,14 @@ landmark_3 = Landmark('3', corners=[[20, 20], [20, 25], [25, 25], [25, 20]])
 landmarks = [landmark_1, landmark_2, landmark_3]
 landmarks = []
 
-nsm = NeighbourSelectionMechanism.FARTHEST
+nsm = NeighbourSelectionMechanism.NEAREST
 switch_type = SwitchType.NEIGHBOUR_SELECTION_MECHANISM
 switch_options = (NeighbourSelectionMechanism.NEAREST, NeighbourSelectionMechanism.FARTHEST)
 threshold = 0.1
 num_previous_steps= 100
+k = 1
 
-num_ideal_neighbours = 5
+num_ideal_neighbours = 9
 stress_delta = 0.05
 
 sim = OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(num_agents=n_agents,
@@ -48,6 +49,7 @@ sim = OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(num_agents=n
                       environment_weight=environment_weight,
                       single_speed=single_speed,
                       neighbour_selection=nsm,
+                      k=k,
                       switch_type=switch_type,
                       switch_options=switch_options,
                       threshold=threshold,

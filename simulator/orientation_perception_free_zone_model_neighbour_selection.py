@@ -68,6 +68,61 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
 
         return np.column_stack([pos_xs, pos_ys, pos_hs, speeds, switchVals, stress_levels])
     
+    def graph_agents(self, agents):
+        """
+        Redraws the visualization for the current positions and orientations of the agents.
+        """  
+        self.ax.clear()
+
+        for i in range(self.visualize_vision_fields):
+            for focus_area in self.animal_type.focus_areas:
+                focus_angle = agents[i,2] + agents[i,4] + focus_area.azimuth_angle_position_horizontal + 2 * np.pi
+                start_angle = np.rad2deg(focus_angle - focus_area.angle_field_horizontal) 
+                end_angle = np.rad2deg(focus_angle + focus_area.angle_field_horizontal) 
+                if focus_area.comfortable_distance[1] == np.inf:
+                    distance = 1000
+                else:
+                    distance = focus_area.comfortable_distance[1]
+                #print(f"az={focus_area.azimuth_angle_position_horizontal}, h={focus_area.angle_field_horizontal}, o={ac.wrap_to_2_pi(agents[0,2])}, st={start_angle}, e={end_angle}")
+                wedge = mpatches.Wedge((agents[i,0], agents[i,1]), distance, start_angle, end_angle, ec="none", color=self.colours[i])
+                self.ax.add_patch(wedge)
+
+        if self.environment_weight > 0:
+            # Draw landmarks
+            for landmark in self.landmarks:
+                self.ax.add_patch(landmark.get_patch_for_display())
+                self.ax.annotate(landmark.id, landmark.get_annotation_point(), color="white")
+
+        # Draw agents
+        uv_coords = ac.compute_u_v_coordinates_for_angles(agents[:,2])
+
+        self.ax.scatter(agents[:, 0], agents[:, 1], color="white", s=15)
+
+        colours = np.full(self.num_agents, 'w')
+        colours = np.where(agents[:,4] == self.disorder_placeholder, 'y', colours)
+
+        self.ax.quiver(agents[:, 0], agents[:, 1],
+                    uv_coords[:, 0], uv_coords[:, 1],
+                    color=colours, width=0.005, scale=40)
+
+        # Draw Trajectory
+        if len(self.centroid_trajectory) > 1:
+            x_traj, y_traj = zip(*self.centroid_trajectory)
+            self.ax.plot(x_traj, y_traj, color="orange")
+
+        self.ax.set_facecolor((0, 0, 0))
+
+        centroid_x, centroid_y = np.mean(agents[:, 0]), np.mean(agents[:, 1])
+        if self.follow:
+            self.ax.set_xlim(centroid_x-10, centroid_x+10)
+            self.ax.set_ylim(centroid_y-10, centroid_y+10)
+        else:
+            self.ax.set_xlim(0, self.domain_size[0])
+            self.ax.set_ylim(0, self.domain_size[1])
+
+        plt.pause(0.000001)
+        #plt.pause(0.5)
+    
     def get_selected(self, neighbour_selection, k, neighbours, distances):
         match neighbour_selection:
             case NeighbourSelectionMechanism.NEAREST:
@@ -97,6 +152,8 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
     
     def compute_stress_levels(self, agents, neighbours):
         num_neighbours = np.count_nonzero(neighbours, axis=1)
+        if self.current_step % 100 == 0:
+            print(f"{self.current_step}: {num_neighbours}")
         stress_levels = agents[:,5]
         stress_levels = np.where(num_neighbours > self.num_ideal_neighbours, stress_levels - self.stress_delta, stress_levels)
         stress_levels = np.where(num_neighbours < self.num_ideal_neighbours, stress_levels + self.stress_delta, stress_levels)

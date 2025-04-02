@@ -14,15 +14,16 @@ Evaluation plots:
 """
 
 class EvaluatorBasicMovement:
-    def __init__(self, data_file_path, base_save_path, animal_type, max_iters=None):
+    def __init__(self, data_file_path, base_save_path, animal_type, min_iters=None, max_iters=None):
         self.data_file_path = data_file_path
         self.base_save_path = base_save_path
         self.animal_type = animal_type
+        self.min_iters = min_iters
         self.max_iters = max_iters
         self.load_data()
         
     def load_data(self):
-        self.data = logger.load_log_data(self.data_file_path, max_iters=self.max_iters)
+        self.data = logger.load_log_data(self.data_file_path, min_iters=self.min_iters, max_iters=self.max_iters)
 
     def evaluate_and_visualise(self, metric=None, normalise_cohesion=False):
         if metric in [None, Metrics.COHESION]:

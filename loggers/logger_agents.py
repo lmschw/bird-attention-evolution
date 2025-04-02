@@ -53,14 +53,17 @@ def log_results_to_csv(dict_list, save_path):
         for dict in dict_list:
             w.writerow(dict.values())
 
-def load_log_data(filepath, max_iters=None, is_predator_scenario=False, load_predator=False):
+def load_log_data(filepath, min_iters=None, max_iters=None, is_predator_scenario=False, load_predator=False):
     df = pd.read_csv(filepath,index_col=False)
+    if min_iters == None:
+        min_iters = 0
     if max_iters == None:
         max_iters = df['iter'].max() + 1
+    min_iter = max(0, min_iters)
     max_iter = min(df['iter'].max() + 1,max_iters)
     data = []
     data_predator = []
-    for iter in range(max_iter):
+    for iter in range(min_iter, max_iter):
         print(f"loading data for iter {iter+1}/{max_iter}")
         data_iter = []
         data_predator_iter = []

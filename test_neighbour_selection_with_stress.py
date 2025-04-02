@@ -49,10 +49,10 @@ stress_delta = 0.05
 num_iters = 50
 k = 1
 
-for n_agents in [7, 5, 10, 20]:
-    num_ideal_neighbours = n_agents -1
-    for animal_type in [Pigeon(), Hawk(), Zebrafinch(), Zebra(), Wolf(), Rabbit()]:
-            base_save_path = f"ns_stress_{animal_type.name}_n={n_agents}"
+for n_agents in [7]:
+    num_ideal_neighbours = n_agents -2
+    for animal_type in [Pigeon()]:
+            base_save_path = f"ns_stress_{animal_type.name}_n={n_agents}_ideal={num_ideal_neighbours}"
             save_path_params = f"log_params_{base_save_path}.csv"
             save_path_agents = f"log_agents_{base_save_path}.csv"
             save_path_centroid = f"log_centroid_{base_save_path}.csv"

@@ -11,11 +11,11 @@ from animal_models.zebra import Zebra
 from animal_models.zebrafinch import Zebrafinch
 
 for n in [7]:
-    for animal_type in [Hawk()]:
-        base_save_path = f"ns_stress_normed_{animal_type.name}_n={n}"
+    for animal_type in [Pigeon()]:
+        base_save_path = f"test_ns_stress_normed_{animal_type.name}_n={n}"
         save_path_agents = f"log_agents_ns_stress_{animal_type.name}_n={n}.csv"
         evaluator = EvaluatorBasicMovement(data_file_path=save_path_agents, 
                                         base_save_path=base_save_path,
                                         animal_type=animal_type,
-                                        max_iters=None)
+                                        max_iters=1)
         evaluator.evaluate_and_visualise(metric=Metrics.ORDER)

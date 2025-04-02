@@ -2,6 +2,8 @@ import numpy as np
 
 from simulator.orientation_perception_free_zone_model_neighbour_selection import OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator
 from simulator.enum_neighbour_selection import NeighbourSelectionMechanism
+from simulator.enum_switchtype import SwitchType
+
 from animal_models.pigeon import Pigeon
 from animal_models.hawk import Hawk
 from animal_models.zebrafinch import Zebrafinch
@@ -35,14 +37,22 @@ environment_weight = 0
 other_type_weight = None
 
 landmarks = []
+nsm = NeighbourSelectionMechanism.NEAREST
+switch_type = SwitchType.NEIGHBOUR_SELECTION_MECHANISM
+switch_options = (NeighbourSelectionMechanism.NEAREST, NeighbourSelectionMechanism.FARTHEST)
+threshold = 0.1
+num_previous_steps= 100
+k = 1
+
+stress_delta = 0.05
 
 num_iters = 50
 k = 1
 
 for n_agents in [7, 5, 10, 20]:
-    for neighbour_selection in [NeighbourSelectionMechanism.FARTHEST]:
-        for animal_type in [Pigeon(), Hawk(), Zebrafinch(), Zebra(), Wolf(), Rabbit()]:
-            base_save_path = f"ns_{animal_type.name}_nsm={neighbour_selection.value}_n={n_agents}"
+    num_ideal_neighbours = n_agents -1
+    for animal_type in [Pigeon(), Hawk(), Zebrafinch(), Zebra(), Wolf(), Rabbit()]:
+            base_save_path = f"ns_stress_{animal_type.name}_n={n_agents}"
             save_path_params = f"log_params_{base_save_path}.csv"
             save_path_agents = f"log_agents_{base_save_path}.csv"
             save_path_centroid = f"log_centroid_{base_save_path}.csv"
@@ -58,7 +68,10 @@ for n_agents in [7, 5, 10, 20]:
                 "dist_based_zone_factors": dist_based_zone_factors,
                 "social_weight": social_weight,
                 "environment_weight": environment_weight,
-                "neighbour_selection": neighbour_selection.value,
+                "switch_type": switch_type.value,
+                "start_nsm": nsm.value,
+                "num_ideal_neighbours": num_ideal_neighbours,
+                "stress_delta": stress_delta,
                 "landmarks": "-".join(",".join(f"[{corner[0]},{corner[1]}]" for corner in landmark.corners) for landmark in landmarks)
             }
 
@@ -77,8 +90,14 @@ for n_agents in [7, 5, 10, 20]:
                                     social_weight=social_weight,
                                     environment_weight=environment_weight,
                                     single_speed=single_speed,
-                                    neighbour_selection=neighbour_selection,
+                                    neighbour_selection=nsm,
                                     k=k,
+                                    switch_type=switch_type,
+                                    switch_options=switch_options,
+                                    threshold=threshold,
+                                    num_previous_steps=num_previous_steps,
+                                    num_ideal_neighbours=num_ideal_neighbours,
+                                    stress_delta=stress_delta,
                                     visualize=visualize,
                                     visualize_vision_fields=visualize_vision_fields,
                                     follow=follow,

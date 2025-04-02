@@ -4,15 +4,15 @@ from area_models.landmark import Landmark
 from simulator.enum_switchtype import SwitchType
 from simulator.enum_neighbour_selection import NeighbourSelectionMechanism
 
-n_agents = 7
+n_agents = 10
 n_steps = 10000
-domain_size = (500, 500)
+domain_size = (5000, 5000)
 noise_amplitude = 0
-start_position = (250, 20)
+start_position = (2500, 2500)
 graph_freq = 10
 visualize = True
 visualize_vision_fields = 0
-follow = True
+follow = False
 single_speed = True
 animal_type = Pigeon()
 
@@ -29,10 +29,14 @@ landmark_3 = Landmark('3', corners=[[20, 20], [20, 25], [25, 25], [25, 20]])
 landmarks = [landmark_1, landmark_2, landmark_3]
 landmarks = []
 
+nsm = NeighbourSelectionMechanism.FARTHEST
 switch_type = SwitchType.NEIGHBOUR_SELECTION_MECHANISM
 switch_options = (NeighbourSelectionMechanism.NEAREST, NeighbourSelectionMechanism.FARTHEST)
 threshold = 0.1
 num_previous_steps= 100
+
+num_ideal_neighbours = 5
+stress_delta = 0.05
 
 sim = OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(num_agents=n_agents,
                       animal_type=animal_type,
@@ -43,10 +47,13 @@ sim = OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(num_agents=n
                       social_weight=social_weight,
                       environment_weight=environment_weight,
                       single_speed=single_speed,
+                      neighbour_selection=nsm,
                       switch_type=switch_type,
                       switch_options=switch_options,
                       threshold=threshold,
                       num_previous_steps=num_previous_steps,
+                      num_ideal_neighbours=num_ideal_neighbours,
+                      stress_delta=stress_delta,
                       visualize=visualize,
                       visualize_vision_fields=visualize_vision_fields,
                       follow=follow,

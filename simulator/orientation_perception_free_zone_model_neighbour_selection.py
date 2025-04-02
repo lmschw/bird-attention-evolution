@@ -22,7 +22,7 @@ REPULSION_FACTOR = 50
 class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationPerceptionFreeZoneModelSimulator):
 
     def __init__(self, num_agents, animal_type, domain_size, start_position, switch_type, switch_options, threshold,
-                 num_previous_steps=100, landmarks=[], noise_amplitude=0, 
+                 num_previous_steps=100, stress_delta=0.05, num_ideal_neighbours=9, landmarks=[], noise_amplitude=0, 
                  social_weight=1, environment_weight=1, limit_turns=True, use_distant_dependent_zone_factors=True, 
                  single_speed=True, neighbour_selection=None, k=None, visualize=True, visualize_vision_fields=0, 
                  follow=False, graph_freq=5, save_path_agents=None, save_path_centroid=None, iter=0):
@@ -34,8 +34,12 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
         self.switch_options = switch_options
         self.disorder_value = switch_options[0]
         self.order_value = switch_options[1]
+        self.disorder_placeholder = 0
+        self.order_placeholder = 1
         self.threshold = threshold
         self.num_previous_steps = num_previous_steps
+        self.stress_delta = stress_delta
+        self.num_ideal_neighbours = num_ideal_neighbours
 
     def init_agents(self):
         base = super().init_agents()
@@ -48,13 +52,21 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
             speeds = np.random.uniform(self.animal_type.speeds[0], self.animal_type.speeds[2], self.num_agents)
 
         if self.switch_type == SwitchType.NEIGHBOUR_SELECTION_MECHANISM:
-            switchVals = np.full(self.num_agents, self.neighbour_selection)
+            if self.neighbour_selection == self.order_value:
+                switchVals = np.full(self.num_agents, self.order_placeholder)
+            else:
+                switchVals = np.full(self.num_agents, self.disorder_placeholder)
         else:
-            switchVals = np.full(self.num_agents, self.k)
+            if self.k == self.order_value:
+                switchVals = np.full(self.num_agents, self.order_placeholder)
+            else:
+                switchVals = np.full(self.num_agents, self.disorder_placeholder)
+
+        stress_levels = np.zeros(self.num_agents)
 
         self.colours = np.random.uniform(0, 1, (self.visualize_vision_fields, 3))
 
-        return np.column_stack([pos_xs, pos_ys, pos_hs, speeds, switchVals])
+        return np.column_stack([pos_xs, pos_ys, pos_hs, speeds, switchVals, stress_levels])
     
     def get_selected(self, neighbour_selection, k, neighbours, distances):
         match neighbour_selection:
@@ -76,25 +88,32 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
                     vals_order = self.get_selected(neighbour_selection=self.neighbour_selection, k=self.order_value, neighbours=neighbours, distances=distances)
                     vals_disorder = self.get_selected(neighbour_selection=self.neighbour_selection, k=self.disorder_value, neighbours=neighbours, distances=distances)
 
-            selected = np.where(decisions == self.order_value, vals_order, vals_disorder)
+            selected = np.where(decisions == self.order_placeholder, vals_order, vals_disorder)
 
             new_neighbours = np.full((self.num_agents, self.num_agents), False)
             new_neighbours[selected] = True
             return new_neighbours
         return neighbours    
     
-    def get_decisions(self, agents, vision_strengths):
-        neighbours = vision_strengths > 0
+    def compute_stress_levels(self, agents, neighbours):
+        num_neighbours = np.count_nonzero(neighbours, axis=1)
+        stress_levels = agents[:,5]
+        stress_levels = np.where(num_neighbours > self.num_ideal_neighbours, stress_levels - self.stress_delta, stress_levels)
+        stress_levels = np.where(num_neighbours < self.num_ideal_neighbours, stress_levels + self.stress_delta, stress_levels)
+        return stress_levels
+    
+    def get_decisions(self, agents, neighbours, stress_levels):
         local_orders = mf.compute_local_orders(agents=agents, neighbours=neighbours)
         self.local_order_history.append(local_orders)
+        eval_vals = local_orders + stress_levels
         min_t = max(0, self.current_step-self.num_previous_steps)
         if self.current_step - min_t > 0:
             average_prev_local_orders = np.average(self.local_order_history[min_t:self.current_step], axis=0)
             switch_difference_threshold_lower = self.threshold
             switch_difference_threshold_upper = 1-self.threshold
 
-            old_with_new_order_values = np.where(((local_orders >= switch_difference_threshold_upper) & (average_prev_local_orders <= switch_difference_threshold_upper)), np.full(len(agents), self.order_value), agents[:,4])
-            updated_switch_values = np.where(((local_orders <= switch_difference_threshold_lower) & (average_prev_local_orders >= switch_difference_threshold_lower)), np.full(len(agents), self.disorder_value), old_with_new_order_values)
+            old_with_new_order_values = np.where(((eval_vals >= switch_difference_threshold_upper) & (average_prev_local_orders <= switch_difference_threshold_upper)), np.full(len(agents), self.order_placeholder), agents[:,4])
+            updated_switch_values = np.where(((eval_vals <= switch_difference_threshold_lower) & (average_prev_local_orders >= switch_difference_threshold_lower)), np.full(len(agents), self.disorder_placeholder), old_with_new_order_values)
             neighbour_counts = np.count_nonzero(neighbours, axis=1)
             updated_switch_values = np.where((neighbour_counts <= 1), agents[:,4], updated_switch_values)
         else:
@@ -109,15 +128,17 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
         match_factors = self.compute_conspecific_match_factors(distances=distances)
         side_factors = self.compute_side_factors(angles, shape=(len(agents), len(agents)))
         vision_strengths = self.compute_vision_strengths(distances=distances, angles=angles, shape=(len(agents), len(agents)))
-        decisions = self.get_decisions(agents, vision_strengths)
+        neighbours = vision_strengths > 0
+        stress_levels = self.compute_stress_levels(agents, neighbours)
+        decisions = self.get_decisions(agents, neighbours, stress_levels)
         neighbours = self.get_neighbours(vision_strengths, distances, decisions)
-        return np.sum(match_factors * side_factors * vision_strengths * neighbours, axis=1), distances, angles, vision_strengths, decisions
+        return np.sum(match_factors * side_factors * vision_strengths * neighbours, axis=1), distances, angles, vision_strengths, decisions, stress_levels
     
     def compute_delta_orientations(self, agents):
         """
         Computes the orientation difference for all agents.
         """
-        delta_orientations_conspecifics, distances, angles, vision_strengths, decisions = self.compute_delta_orientations_conspecifics(agents=agents)
+        delta_orientations_conspecifics, distances, angles, vision_strengths, decisions, stress_levels = self.compute_delta_orientations_conspecifics(agents=agents)
         if len(self.landmarks) > 0:
             delta_orientations_landmarks = self.compute_delta_orientations_landmarks(agents=agents)
         else:
@@ -126,18 +147,18 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
         delta_orientations = self.social_weight * delta_orientations_conspecifics + self.environment_weight * delta_orientations_landmarks
         #delta_orientations = np.where((delta_orientations > self.animal_type.max_turn_angle), self.animal_type.max_turn_angle, delta_orientations)
         #delta_orientations = np.where((delta_orientations < -self.animal_type.max_turn_angle), -self.animal_type.max_turn_angle, delta_orientations)
-        return delta_orientations, distances, angles, vision_strengths, decisions
+        return delta_orientations, distances, angles, vision_strengths, decisions, stress_levels
 
     def compute_new_orientations(self, agents):
         """
         Computes the new orientations for all agents.
         """
-        delta_orientations, distances, angles, vision_strengths, decisions = self.compute_delta_orientations(agents=agents)
+        delta_orientations, distances, angles, vision_strengths, decisions, stress_levels = self.compute_delta_orientations(agents=agents)
         # add noise
         delta_orientations = delta_orientations + self.generate_noise()
 
         new_orientations = ac.wrap_to_pi(agents[:,2] + delta_orientations)
-        return new_orientations, decisions
+        return new_orientations, decisions, stress_levels
 
     def run(self, tmax, dt=1):
         """
@@ -154,7 +175,7 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
             self.current_step = t
 
             agents[:,0], agents[:,1] = self.compute_new_positions(agents=agents)      
-            agents[:,2], agents[:,4] = self.compute_new_orientations(agents=agents)
+            agents[:,2], agents[:,4], agents[:,5] = self.compute_new_orientations(agents=agents)
             
             self.curr_agents = agents
 

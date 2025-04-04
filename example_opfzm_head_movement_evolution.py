@@ -12,6 +12,14 @@ import general.normalisation as normal
 
 weight_options = [
                   WeightOptions.NUM_VISIBLE_AGENTS,
+                  WeightOptions.NUM_AGENTS_LEFT,
+                  WeightOptions.NUM_AGENTS_RIGHT,
+                  WeightOptions.AVG_DISTANCES,
+                  WeightOptions.AVG_BEARINGS,
+                  WeightOptions.CLOSEST_DISTANCES,
+                  WeightOptions.CLOSEST_BEARINGS,
+                  WeightOptions.DISTANCE_CLOSEST_FOVEA,
+                  WeightOptions.BEARING_CLOSEST_FOVEA,
                   WeightOptions.PREVIOUS_HEAD_ANGLES,
                   WeightOptions.AVG_PERCEPTION_STRENGTHS,
                   WeightOptions.RANDOM
@@ -33,9 +41,9 @@ start_position = (0, 0)
 social_weight = 1
 path_weight = 0
 
-num_iters = 25
-num_gens = 30
-num_ind = 5
+num_iters = 1
+num_gens = 20
+num_ind = 2
 use_norm = True
 pop_size = 30
 bounds = [0,1]
@@ -62,7 +70,7 @@ logger_evolution.initialise_log_file_with_headers(logger_evolution.create_header
 logger_evolution.initialise_log_file_with_headers(logger_evolution.create_headers(weight_options=weight_options, is_best=True), save_path=save_path_best_normalised)
 
 for i in range(num_iters):
-    print(f"{i}/{num_iters}")
+    print(f"{i+1}/{num_iters}")
     evo = DifferentialEvolution(tmax=n_steps,
                             num_agents=n_agents,
                             animal_type=animal_type,

@@ -5,6 +5,7 @@ import shapely.ops as shpops
 from shapely import Point
 
 import general.angle_conversion as ac
+import general.occlusion as occ
 import vision.perception_strength as pstrength
 import loggers.logger_agents as logger
 
@@ -21,7 +22,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
     def __init__(self, num_agents, animal_type, domain_size, start_position, landmarks=[],
                  noise_amplitude=0, social_weight=1, environment_weight=1, limit_turns=True, 
                  use_distant_dependent_zone_factors=True, single_speed=True, neighbour_selection=None, 
-                 k=None, visualize=True, visualize_vision_fields=0, follow=False, graph_freq=5, 
+                 k=None, occlusion_active=False, visualize=True, visualize_vision_fields=0, follow=False, graph_freq=5, 
                  save_path_agents=None, save_path_centroid=None, iter=0):
         """
         Params:
@@ -57,6 +58,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         self.single_speed = single_speed
         self.neighbour_selection = neighbour_selection
         self.k = k
+        self.occlusion_active = occlusion_active
         self.visualize_vision_fields = visualize_vision_fields
         self.save_path_agents = save_path_agents
         self.save_path_centroid = save_path_centroid
@@ -266,7 +268,13 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
                 selected = np.argmax(dists, axis=1)[:self.k]
             new_neighbours = np.full((self.num_agents, self.num_agents), False)
             new_neighbours[selected] = True
-            return new_neighbours
+            neighbours = new_neighbours
+        if self.occlusion_active:
+            visibles = occ.compute_not_occluded_mask(agents=self.curr_agents, animal_type=self.animal_type)
+            if len(self.landmarks) > 0:
+                visibles_landmarks = occ.compute_not_occluded_mask_landmarks(agents=self.curr_agents, animal_type=self.animal_type, landmarks=self.landmarks)
+                visibles = visibles & visibles_landmarks
+            return neighbours & visibles
         return neighbours    
             
 

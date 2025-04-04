@@ -2,7 +2,7 @@ from simulator.orientation_perception_free_zone_model import OrientationPercepti
 from animal_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 
-n_agents = 7
+n_agents = 10
 n_steps = 10000
 domain_size = (500, 500)
 noise_amplitude = 0
@@ -16,6 +16,7 @@ animal_type = Pigeon()
 start_position = (10, 10)
 
 dist_based_zone_factors = True
+occlusion_active = True
 
 social_weight = 0.5
 environment_weight = 0
@@ -36,6 +37,7 @@ sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
                       social_weight=social_weight,
                       environment_weight=environment_weight,
                       single_speed=single_speed,
+                      occlusion_active=occlusion_active,
                       visualize=visualize,
                       visualize_vision_fields=visualize_vision_fields,
                       follow=follow,

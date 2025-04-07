@@ -331,7 +331,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         new_orientations = ac.wrap_to_pi(agents[:,2] + delta_orientations)
         return new_orientations
 
-    def compute_new_orientations(self, prey, predators):
+    def compute_new_orientations_and_speeds(self, prey, predators):
         """
         Computes the new orientations for all agents (predator and prey).
         """
@@ -388,7 +388,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
             self.prey = prey
             self.predators = predators
             
-            prey[:,2], predators[:,2]  = self.compute_new_orientations(prey=prey, predators=predators)
+            prey[:,2], predators[:,2]  = self.compute_new_orientations_and_speeds(prey=prey, predators=predators)
 
             if self.kill and len(predators) > 0:
                 prey, predators = self.check_kills(prey=prey, predators=predators)

@@ -17,11 +17,12 @@ Implementation of the orientation-perception-free zone model with landmarks.
 """
 
 REPULSION_FACTOR = 50
+SPEED_REDUCTION_FACTOR = 10
 
 class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
     def __init__(self, num_agents, animal_type, domain_size, start_position, landmarks=[],
                  noise_amplitude=0, social_weight=1, environment_weight=1, limit_turns=True, 
-                 use_distant_dependent_zone_factors=True, single_speed=True, neighbour_selection=None, 
+                 use_distant_dependent_zone_factors=True, single_speed=True, speed_delta=0.001, neighbour_selection=None, 
                  k=None, occlusion_active=False, visualize=True, visualize_vision_fields=0, follow=False, graph_freq=5, 
                  save_path_agents=None, save_path_centroid=None, iter=0):
         """
@@ -56,6 +57,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         self.limit_turns = limit_turns
         self.use_distant_dependent_zone_factors = use_distant_dependent_zone_factors
         self.single_speed = single_speed
+        self.speed_delta = speed_delta
         self.neighbour_selection = neighbour_selection
         self.k = k
         self.occlusion_active = occlusion_active
@@ -315,8 +317,19 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         #delta_orientations = np.where((delta_orientations > self.animal_type.max_turn_angle), self.animal_type.max_turn_angle, delta_orientations)
         #delta_orientations = np.where((delta_orientations < -self.animal_type.max_turn_angle), -self.animal_type.max_turn_angle, delta_orientations)
         return delta_orientations, distances, angles, vision_strengths
+    
+    def compute_speeds(self, agents, distances):
+        if self.single_speed:
+            return agents[:,3]
+        nearest_distances = np.min(distances, axis=1)
+        is_too_far = nearest_distances > self.animal_type.preferred_distance_front_back[1]
+        is_too_close = nearest_distances < self.animal_type.preferred_distance_front_back[0]
+        speeds = np.where(is_too_far, agents[:,3] + self.speed_delta, agents[:,3])
+        speeds = np.where(is_too_close, speeds - SPEED_REDUCTION_FACTOR * self.speed_delta, speeds)
+        return speeds
 
-    def compute_new_orientations(self, agents):
+
+    def compute_new_orientations_and_speeds(self, agents):
         """
         Computes the new orientations for all agents.
         """
@@ -325,7 +338,9 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         delta_orientations = delta_orientations + self.generate_noise()
 
         new_orientations = ac.wrap_to_pi(agents[:,2] + delta_orientations)
-        return new_orientations
+
+        new_speeds = self.compute_speeds(agents=agents, distances=distances)
+        return new_orientations, new_speeds
 
     def compute_new_positions(self, agents):
         """
@@ -350,7 +365,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
             self.current_step = t
 
             agents[:,0], agents[:,1] = self.compute_new_positions(agents=agents)
-            agents[:,2] = self.compute_new_orientations(agents=agents)
+            agents[:,2], agents[:,3] = self.compute_new_orientations_and_speeds(agents=agents) 
             self.curr_agents = agents
 
             self.states.append(self.curr_agents.copy())

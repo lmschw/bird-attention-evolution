@@ -215,7 +215,7 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
         #delta_orientations = np.where((delta_orientations < -self.animal_type.max_turn_angle), -self.animal_type.max_turn_angle, delta_orientations)
         return delta_orientations, distances, angles, vision_strengths, decisions, stress_levels
 
-    def compute_new_orientations(self, agents):
+    def compute_new_orientations_and_speeds(self, agents):
         """
         Computes the new orientations for all agents.
         """
@@ -241,7 +241,7 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
             self.current_step = t
 
             agents[:,0], agents[:,1] = self.compute_new_positions(agents=agents)      
-            agents[:,2], agents[:,4], agents[:,5] = self.compute_new_orientations(agents=agents)
+            agents[:,2], agents[:,4], agents[:,5] = self.compute_new_orientations_and_speeds(agents=agents)
             
             self.curr_agents = agents
 

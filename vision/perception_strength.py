@@ -57,7 +57,7 @@ def compute_perception_strengths_with_occlusion_conspecifics(agents, distances, 
                                                         head_orientations=head_orientations)
     occluded_conspecifics = occ.compute_occluded_mask(agents=agents, animal_type=animal_type)
     if len(landmarks) > 0:
-        occluded_landmarks = occ.compute_not_occluded_mask_landmarks(agents=agents, animal_type=animal_type, landmarks=landmarks)
+        occluded_landmarks = occ.compute_occluded_mask_landmarks(agents=agents, animal_type=animal_type, landmarks=landmarks)
     else:
         occluded_landmarks = np.full(shape, True)
     

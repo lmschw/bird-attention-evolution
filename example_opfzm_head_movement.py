@@ -20,6 +20,7 @@ weights = [0.24373, 0.90672, 1.,      0.31082]
 weights = [0.52398, 0.70982, 0.98804, 0.50911]
 weights = [0,0,0,0]
 """
+"""
 weight_options = [WeightOptions.CLOSEST_DISTANCES,
                   WeightOptions.CLOSEST_BEARINGS,
                   WeightOptions.AVG_DISTANCES,
@@ -27,9 +28,26 @@ weight_options = [WeightOptions.CLOSEST_DISTANCES,
                   WeightOptions.NUM_VISIBLE_AGENTS,
                   WeightOptions.PREVIOUS_HEAD_ANGLES,
                   WeightOptions.AVG_PERCEPTION_STRENGTHS]
+weights = [0.04894279039946401,0.00667812943656855,0.10353310279886091,0.21765670588565983,0.20047645873708853,0.20505610685669823,0.21765670588565983]
+                 
+"""
+weight_options = [
+                  WeightOptions.NUM_VISIBLE_AGENTS,
+                  WeightOptions.NUM_AGENTS_LEFT,
+                  WeightOptions.NUM_AGENTS_RIGHT,
+                  WeightOptions.AVG_DISTANCES,
+                  WeightOptions.AVG_BEARINGS,
+                  WeightOptions.CLOSEST_DISTANCES,
+                  WeightOptions.CLOSEST_BEARINGS,
+                  WeightOptions.DISTANCE_CLOSEST_FOVEA,
+                  WeightOptions.BEARING_CLOSEST_FOVEA,
+                  WeightOptions.PREVIOUS_HEAD_ANGLES,
+                  WeightOptions.AVG_PERCEPTION_STRENGTHS,
+                  WeightOptions.RANDOM
+                  ]
+weights = [0.09370933945137962,0.0797022504829369,0.15276381382115248,0.09553055010926725,0.001070361688274254,0.05896547463084023,0.05453073419967376,0.09190745792899531,0.15276381382115248,0.0712821788778475,0.12410771119226666,0.02366631379621353]
 weight_size = len(weight_options)
 output_size = 1
-weights = [0.04894279039946401,0.00667812943656855,0.10353310279886091,0.21765670588565983,0.20047645873708853,0.20505610685669823,0.21765670588565983]
 
 #weights = [0, 0, 0, 0, 0, 0, 0]
 

@@ -2,6 +2,7 @@ import numpy as np
 
 import general.normalisation as normal
 import general.angle_conversion as ac
+import general.occlusion as occ
 
 """
 Contains methods to compute perception strengths.
@@ -47,3 +48,25 @@ def compute_perception_strengths(distances, angles, shape, animal_type, head_ori
     vision_strengths_overall = np.sum(vision_strengths_overall.T, axis=2).T
     vision_strengths_overall = normal.normalise(vision_strengths_overall)
     return vision_strengths_overall
+
+def compute_perception_strengths_with_occlusion_conspecifics(agents, distances, angles, shape, animal_type, head_orientations=[], landmarks=[]):
+    perception_strengths = compute_perception_strengths(distances=distances,
+                                                        angles=angles,
+                                                        shape=shape,
+                                                        animal_type=animal_type,
+                                                        head_orientations=head_orientations)
+    positions = np.column_stack((agents[:,0], agents[:,1]))
+    occluded_conspecifics = occ.get_occlusion_mask(positions=positions,
+                                                   orientations=agents[:,2],
+                                                   animal_type=animal_type)
+    if len(landmarks) > 0:
+        occluded_landmarks = occ.get_occlusion_mask_landmarks(positions=positions,
+                                                              orientations=agents[:,2],
+                                                              landmarks=landmarks,
+                                                              animal_type=animal_type)
+    else:
+        occluded_landmarks = np.full(shape, True)
+    
+    perception_strengths[occluded_conspecifics] = 0
+    perception_strengths[occluded_landmarks] = 0
+    return perception_strengths

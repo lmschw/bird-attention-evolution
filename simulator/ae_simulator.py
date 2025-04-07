@@ -52,7 +52,7 @@ class ActiveElasticSimulator(BaseSimulator):
                          graph_freq=graph_freq)
         
     def initialize(self):
-        self.sigmas = np.full(self.num_agents, SIGMA)
+        self.sigmas = np.full(self.num_agents, np.average(self.animal_type.preferred_distance_left_right))
         return super().initialize()
 
     def get_pi_elements(self, distances, angles):

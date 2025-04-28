@@ -1,6 +1,7 @@
 import matplotlib.patches as mpatches
 from shapely import centroid
 from shapely.geometry import Polygon
+from shapely.plotting import patch_from_polygon
 
 """
 Represents a landmark, e.g. a tree, house etc.. 
@@ -11,10 +12,13 @@ corners     -   list of lists representing the corner points of the polygon     
 """
     
 class Landmark:
-    def __init__(self, id, corners):
+    def __init__(self, id, corners=[], polygon=None):
         self.id = id
         self.corners = corners
-        self.polygon = Polygon(self.corners)
+        if polygon:
+            self.polygon = polygon
+        else:
+            self.polygon = Polygon(self.corners)
 
     def get_geometry(self):
         return self.polygon
@@ -24,4 +28,4 @@ class Landmark:
         return [point.x, point.y]
     
     def get_patch_for_display(self):
-        return mpatches.Polygon(self.corners)
+        return patch_from_polygon(self.polygon)

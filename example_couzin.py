@@ -1,5 +1,5 @@
 from animal_models.pigeon import Pigeon
-from simulator.couzin_with_perception_strength_simulator import CouzinZoneModelSimulator
+from simulator.couzin_simulator import CouzinZoneModelSimulator
 
 
 n_agents = 10

@@ -30,7 +30,7 @@ An implementation of Active Elastic including perception strengths.
 
 class ActiveElasticWithPerceptionStrengthSimulator(ActiveElasticSimulator):
     def __init__(self, animal_type, num_agents, domain_size, start_position,
-                 landmarks=[], visualize=True, follow=True, graph_freq=5):
+                 landmarks=[], occlusion_active=True, visualize=True, follow=True, graph_freq=5):
         """
         Params:
             - animal_type (Animal): the type of animal
@@ -50,6 +50,7 @@ class ActiveElasticWithPerceptionStrengthSimulator(ActiveElasticSimulator):
                          visualize=visualize,
                          follow=follow,
                          graph_freq=graph_freq)
+        self.occlusion_active = occlusion_active
     
 
     def get_pi_elements(self, distances_conspecifics, angles_conspecifics, perception_strengths_conspecifics):
@@ -72,7 +73,11 @@ class ActiveElasticWithPerceptionStrengthSimulator(ActiveElasticSimulator):
         Computes the force components.
         """
         dists_conspecifics, angles_conspecifics = self.compute_distances_and_angles()
-        perception_strengths_conspecifics = pstrength.compute_perception_strengths(distances=dists_conspecifics, angles=angles_conspecifics, shape=(self.num_agents, self.num_agents), animal_type=self.animal_type)
+        if self.occlusion_active:
+            perception_strengths_conspecifics = pstrength.compute_perception_strengths_with_occlusion_conspecifics(agents=self.curr_agents, distances=dists_conspecifics, angles=angles_conspecifics, shape=(self.num_agents, self.num_agents), animal_type=self.animal_type)
+        else:
+            perception_strengths_conspecifics = pstrength.compute_perception_strengths(distances=dists_conspecifics, angles=angles_conspecifics, shape=(self.num_agents, self.num_agents), animal_type=self.animal_type)
+
 
         p_x, p_y = self.get_pi_elements(distances_conspecifics=dists_conspecifics,
                                         angles_conspecifics=angles_conspecifics,

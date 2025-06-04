@@ -11,18 +11,12 @@ import loggers.logger_model_params as logger_params
 import general.normalisation as normal
 
 weight_options = [
-                  WeightOptions.NUM_VISIBLE_AGENTS,
                   WeightOptions.NUM_AGENTS_LEFT,
                   WeightOptions.NUM_AGENTS_RIGHT,
-                  WeightOptions.AVG_DISTANCES,
-                  WeightOptions.AVG_BEARINGS,
-                  WeightOptions.CLOSEST_DISTANCES,
-                  WeightOptions.CLOSEST_BEARINGS,
                   WeightOptions.DISTANCE_CLOSEST_FOVEA,
                   WeightOptions.BEARING_CLOSEST_FOVEA,
                   WeightOptions.PREVIOUS_HEAD_ANGLES,
                   WeightOptions.AVG_PERCEPTION_STRENGTHS,
-                  WeightOptions.RANDOM
                   ]
 len_weights = len(weight_options)
 
@@ -57,7 +51,7 @@ model_params = {'num_agents': n_agents,
                 'weight_options': [option.value for option in weight_options],
                 'metric': metric.value}
 
-postfix = f"_test_opfzm_tmax={n_steps}_n={n_agents}_bt={animal_type.name}_domain={domain_size}_m={metric.value}"
+postfix = f"_test2_opfzm_tmax={n_steps}_n={n_agents}_bt={animal_type.name}_domain={domain_size}_m={metric.value}"
 save_path_best = f"best{postfix}.csv"
 save_path_best_normalised = f"best{postfix}_normalised.csv"
 save_path_general = f"all{postfix}"

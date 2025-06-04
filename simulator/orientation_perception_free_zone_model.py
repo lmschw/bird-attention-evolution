@@ -17,11 +17,12 @@ Implementation of the orientation-perception-free zone model with landmarks.
 """
 
 REPULSION_FACTOR = 50
+SPEED_REDUCTION_FACTOR = 10
 
 class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
     def __init__(self, num_agents, animal_type, domain_size, start_position, landmarks=[],
                  noise_amplitude=0, social_weight=1, environment_weight=1, limit_turns=True, 
-                 use_distant_dependent_zone_factors=True, single_speed=True, neighbour_selection=None, 
+                 use_distant_dependent_zone_factors=True, single_speed=True, speed_delta=0.001, neighbour_selection=None, 
                  k=None, occlusion_active=False, visualize=True, visualize_vision_fields=0, follow=False, graph_freq=5, 
                  save_path_agents=None, save_path_centroid=None, iter=0):
         """
@@ -56,6 +57,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         self.limit_turns = limit_turns
         self.use_distant_dependent_zone_factors = use_distant_dependent_zone_factors
         self.single_speed = single_speed
+        self.speed_delta = speed_delta
         self.neighbour_selection = neighbour_selection
         self.k = k
         self.occlusion_active = occlusion_active
@@ -247,7 +249,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         side_factors = np.where(rights, 1, side_factors)   
         return side_factors
     
-    def compute_vision_strengths(self, distances, angles, shape, animal_type=None):
+    def compute_vision_strengths(self, agents, distances, angles, shape, animal_type=None, use_occlusion=False):
         """
         Computes the vision strengths for every other agent or landmark. Every focus area of the animal_type
         is considered and the distance to the foveal projection is used to determine how well/strongly the
@@ -255,7 +257,15 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         """
         if animal_type == None:
             animal_type = self.animal_type
-        return pstrength.compute_perception_strengths(distances=distances, angles=angles, shape=shape, animal_type=animal_type)
+        if use_occlusion:
+            return pstrength.compute_perception_strengths_with_occlusion_conspecifics(agents=agents,
+                                                                                      distances=distances,
+                                                                                      angles=angles,
+                                                                                      shape=shape,
+                                                                                      animal_type=animal_type,
+                                                                                      landmarks=self.landmarks)
+        else:
+            return pstrength.compute_perception_strengths(distances=distances, angles=angles, shape=shape, animal_type=animal_type)
 
     def get_neighbours(self, vision_strengths, distances):
         neighbours = vision_strengths > 0
@@ -269,12 +279,6 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
             new_neighbours = np.full((self.num_agents, self.num_agents), False)
             new_neighbours[selected] = True
             neighbours = new_neighbours
-        if self.occlusion_active:
-            visibles = occ.compute_not_occluded_mask(agents=self.curr_agents, animal_type=self.animal_type)
-            if len(self.landmarks) > 0:
-                visibles_landmarks = occ.compute_not_occluded_mask_landmarks(agents=self.curr_agents, animal_type=self.animal_type, landmarks=self.landmarks)
-                visibles = visibles & visibles_landmarks
-            return neighbours & visibles
         return neighbours    
             
 
@@ -285,7 +289,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         distances, angles = self.compute_distances_and_angles_conspecifics(agents)
         match_factors = self.compute_conspecific_match_factors(distances=distances)
         side_factors = self.compute_side_factors(angles, shape=(len(agents), len(agents)))
-        vision_strengths = self.compute_vision_strengths(distances=distances, angles=angles, shape=(len(agents), len(agents)))
+        vision_strengths = self.compute_vision_strengths(agents=agents, distances=distances, angles=angles, shape=(len(agents), len(agents)), use_occlusion=self.occlusion_active)
         neighbours = self.get_neighbours(vision_strengths, distances)
         return np.sum(match_factors * side_factors * vision_strengths * neighbours, axis=1), distances, angles, vision_strengths
     
@@ -296,7 +300,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         distances, angles = self.compute_distances_and_angles_landmarks(agents=agents)
         match_factors = self.compute_landmark_match_factors(distances=distances)
         side_factors = self.compute_side_factors(angles, shape=(len(agents), len(self.landmarks)))
-        vision_strengths = self.compute_vision_strengths(distances=distances, angles=angles, shape=(len(agents), len(self.landmarks)))
+        vision_strengths = self.compute_vision_strengths(agents=agents, distances=distances, angles=angles, shape=(len(agents), len(self.landmarks)), use_occlusion=False)
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
     
     def compute_delta_orientations(self, agents):
@@ -313,8 +317,19 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         #delta_orientations = np.where((delta_orientations > self.animal_type.max_turn_angle), self.animal_type.max_turn_angle, delta_orientations)
         #delta_orientations = np.where((delta_orientations < -self.animal_type.max_turn_angle), -self.animal_type.max_turn_angle, delta_orientations)
         return delta_orientations, distances, angles, vision_strengths
+    
+    def compute_speeds(self, agents, distances):
+        if self.single_speed:
+            return agents[:,3]
+        nearest_distances = np.min(distances, axis=1)
+        is_too_far = nearest_distances > self.animal_type.preferred_distance_front_back[1]
+        is_too_close = nearest_distances < self.animal_type.preferred_distance_front_back[0]
+        speeds = np.where(is_too_far, agents[:,3] + self.speed_delta, agents[:,3])
+        speeds = np.where(is_too_close, speeds - SPEED_REDUCTION_FACTOR * self.speed_delta, speeds)
+        return speeds
 
-    def compute_new_orientations(self, agents):
+
+    def compute_new_orientations_and_speeds(self, agents):
         """
         Computes the new orientations for all agents.
         """
@@ -323,7 +338,9 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         delta_orientations = delta_orientations + self.generate_noise()
 
         new_orientations = ac.wrap_to_pi(agents[:,2] + delta_orientations)
-        return new_orientations
+
+        new_speeds = self.compute_speeds(agents=agents, distances=distances)
+        return new_orientations, new_speeds
 
     def compute_new_positions(self, agents):
         """
@@ -348,7 +365,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
             self.current_step = t
 
             agents[:,0], agents[:,1] = self.compute_new_positions(agents=agents)
-            agents[:,2] = self.compute_new_orientations(agents=agents)
+            agents[:,2], agents[:,3] = self.compute_new_orientations_and_speeds(agents=agents) 
             self.curr_agents = agents
 
             self.states.append(self.curr_agents.copy())

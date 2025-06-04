@@ -1,4 +1,8 @@
 import numpy as np
+from shapely.geometry import LineString
+
+def compute_occluded_mask(agents, animal_type):
+    return np.logical_not(compute_not_occluded_mask(agents, animal_type))
 
 def compute_not_occluded_mask(agents, animal_type):
     positions = np.column_stack((agents[:,0], agents[:,1]))
@@ -8,6 +12,9 @@ def compute_not_occluded_mask(agents, animal_type):
         mask[i][indices[i]] = True
     np.fill_diagonal(mask, True)
     return mask
+
+def compute_occluded_mask_landmarks(agents, animal_type, landmarks):
+    return np.logical_not(compute_not_occluded_mask_landmarks(agents, animal_type, landmarks))
 
 def compute_not_occluded_mask_landmarks(agents, animal_type, landmarks):
     positions = np.column_stack((agents[:,0], agents[:,1]))
@@ -76,9 +83,6 @@ def get_visible_agents(positions, orientations, animal_type, fov=2*np.pi):
         visibility.append(visible)
 
     return visibility
-
-import numpy as np
-from shapely.geometry import LineString, Polygon, Point
 
 def get_visible_agents_with_landmarks(positions, orientations, landmarks, animal_type, fov=2*np.pi):
     """

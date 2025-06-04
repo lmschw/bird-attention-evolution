@@ -6,6 +6,7 @@ import general.angle_conversion as ac
 import simulator.head_movement.weight_options as wo
 from simulator.orientation_perception_free_zone_model import OrientationPerceptionFreeZoneModelSimulator
 import loggers.logger_agents as logger
+import vision.perception_strength as pstrength
 
 """
 Implementation of the orientation-perception-free zone model with predators and landmarks.
@@ -17,7 +18,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
     def __init__(self, num_prey, animal_type_prey, num_predators, animal_type_predator, domain_size, start_position_prey, 
                  start_position_predator, pack_hunting=False, landmarks=[], noise_amplitude=0, social_weights=[1,1], environment_weights=[1,1],
                  other_type_weights=[1,1], limit_turns=True, use_distant_dependent_zone_factors=True, single_speed=True, 
-                 neighbour_selection=None, k=None,
+                 neighbour_selection=None, k=None, occlusion_active=False,
                  kill=True, killing_frenzy=False, visualize=True, visualize_vision_fields_prey=0, visualize_vision_fields_predator=0, follow=False, 
                  graph_freq=5, save_path_agents=None, save_path_centroid=None, iter=0):
         """
@@ -57,6 +58,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
                          single_speed=single_speed,
                          neighbour_selection=neighbour_selection,
                          k=k,
+                         occlusion_active=occlusion_active,
                          visualize=visualize,
                          visualize_vision_fields=visualize_vision_fields_prey,
                          follow=follow,
@@ -248,6 +250,21 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
 
         return self.compute_distances_and_angles(headings=focus_group[:,2], xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2, transpose_for_angles=True)
     
+    def compute_vision_strengths_other_type(self, distances, angles, shape, animal_type=None, is_prey=True):
+        if animal_type == None:
+            animal_type = self.animal_type
+        if self.occlusion_active:
+            return pstrength.compute_perception_strengths_with_occlusion_predation(prey=self.prey,
+                                                                                   predators=self.predators,
+                                                                                      distances=distances,
+                                                                                      angles=angles,
+                                                                                      shape=shape,
+                                                                                      animal_type=animal_type,
+                                                                                      is_prey=is_prey)
+        else:
+            return pstrength.compute_perception_strengths(distances=distances, angles=angles, shape=shape, animal_type=animal_type)
+
+
     def compute_delta_orientations_away_from_predators(self, prey, predators):
         """
         Computes the orientation difference that is caused by predators on prey (repulsion only).
@@ -255,7 +272,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         distances, angles = self.compute_distances_and_angles_other_type(prey, predators)
         match_factors = np.full((len(prey), len(predators)), 1) # always repulsed
         side_factors = self.compute_side_factors(angles, shape=(len(prey), len(predators)))
-        vision_strengths = self.compute_vision_strengths(distances=distances.T, angles=angles, shape=(len(prey), len(predators)))
+        vision_strengths = self.compute_vision_strengths_other_type(distances=distances.T, angles=angles, shape=(len(prey), len(predators)), is_prey=True)
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
 
     def compute_delta_orientations_towards_prey(self, prey, predators):
@@ -265,7 +282,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         distances, angles = self.compute_distances_and_angles_other_type(predators, prey)
         match_factors = np.full((len(predators),len(prey)), -1) # always attracted
         side_factors = self.compute_side_factors(angles, shape=(len(predators), len(prey)))
-        vision_strengths = self.compute_vision_strengths(distances=distances.T, angles=angles, shape=(len(predators), len(prey)))
+        vision_strengths = self.compute_vision_strengths_other_type(distances=distances.T, angles=angles, shape=(len(predators), len(prey)), is_prey=False)
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
 
     def compute_delta_orientations(self, prey, predators, is_prey):
@@ -314,7 +331,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
         new_orientations = ac.wrap_to_pi(agents[:,2] + delta_orientations)
         return new_orientations
 
-    def compute_new_orientations(self, prey, predators):
+    def compute_new_orientations_and_speeds(self, prey, predators):
         """
         Computes the new orientations for all agents (predator and prey).
         """
@@ -371,7 +388,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
             self.prey = prey
             self.predators = predators
             
-            prey[:,2], predators[:,2]  = self.compute_new_orientations(prey=prey, predators=predators)
+            prey[:,2], predators[:,2]  = self.compute_new_orientations_and_speeds(prey=prey, predators=predators)
 
             if self.kill and len(predators) > 0:
                 prey, predators = self.check_kills(prey=prey, predators=predators)

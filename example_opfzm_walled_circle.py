@@ -2,32 +2,38 @@ from simulator.orientation_perception_free_zone_model import OrientationPercepti
 from animal_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 
-n_agents = 15
+from shapely import Point, Polygon
+
+n_agents = 7
 n_steps = 10000
 domain_size = (500, 500)
 noise_amplitude = 0
-start_position = (250, 20)
+start_position = (25, 25)
 graph_freq = 10
 visualize = True
 visualize_vision_fields = 0
 follow = True
-single_speed = False
-speed_delta = 0.001
+single_speed = True
 animal_type = Pigeon()
-start_position = (250, 250)
+start_position = (domain_size[0]/2, domain_size[1]/2)
 
 dist_based_zone_factors = True
-occlusion_active = True
 
-social_weight = 1
-environment_weight = 0
+social_weight = 0.4
+environment_weight = 0.6
 
-landmark_1 = Landmark('1', corners=[[20, 10], [20, 15], [25, 15], [25, 10]])
-landmark_2 = Landmark('2', corners=[[20, 0], [20, 5], [25, 5], [25, 0]])
-landmark_3 = Landmark('3', corners=[[20, 20], [20, 25], [25, 25], [25, 20]])
+border = Landmark('', corners=[[1,1], [1, 49], [49, 49], [49,1], [1,1], [0,0], [50, 0], [50, 50], [0,50], [0,0]])
+wall_1 = Landmark('', [[20, 0], [20, 20], [25, 20], [25, 0]])
+wall_2 = Landmark('', [[5, 50], [15, 20], [15, 50], [10, 50]])
 
+center = Point(float(domain_size[0]/2), domain_size[1]/2)
+exterior = center.buffer(domain_size[0]/2)
+interior = center.buffer(domain_size[0]/2-5)
+ring = exterior.difference(interior)
 
-landmarks = [landmark_1, landmark_2, landmark_3]
+circle = Landmark('', polygon=ring)
+
+landmarks = [circle]
 
 sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
                       animal_type=animal_type,
@@ -38,8 +44,6 @@ sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
                       social_weight=social_weight,
                       environment_weight=environment_weight,
                       single_speed=single_speed,
-                      speed_delta=speed_delta,
-                      occlusion_active=occlusion_active,
                       visualize=visualize,
                       visualize_vision_fields=visualize_vision_fields,
                       follow=follow,

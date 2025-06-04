@@ -2,6 +2,7 @@ import numpy as np
 
 import general.normalisation as normal
 import general.angle_conversion as ac
+import general.occlusion as occ
 
 """
 Contains methods to compute perception strengths.
@@ -47,3 +48,35 @@ def compute_perception_strengths(distances, angles, shape, animal_type, head_ori
     vision_strengths_overall = np.sum(vision_strengths_overall.T, axis=2).T
     vision_strengths_overall = normal.normalise(vision_strengths_overall)
     return vision_strengths_overall
+
+def compute_perception_strengths_with_occlusion_conspecifics(agents, distances, angles, shape, animal_type, head_orientations=[], landmarks=[]):
+    perception_strengths = compute_perception_strengths(distances=distances,
+                                                        angles=angles,
+                                                        shape=shape,
+                                                        animal_type=animal_type,
+                                                        head_orientations=head_orientations)
+    occluded_conspecifics = occ.compute_occluded_mask(agents=agents, animal_type=animal_type)
+    if len(landmarks) > 0:
+        occluded_landmarks = occ.compute_occluded_mask_landmarks(agents=agents, animal_type=animal_type, landmarks=landmarks)
+    else:
+        occluded_landmarks = np.full(shape, True)
+    
+    perception_strengths[occluded_conspecifics] = 0
+    perception_strengths[occluded_landmarks] = 0
+    return perception_strengths
+
+def compute_perception_strengths_with_occlusion_predation(predators, prey, distances, angles, shape, animal_type, head_orientations=[], is_prey=True):
+    perception_strengths = compute_perception_strengths(distances=distances,
+                                                        angles=angles,
+                                                        shape=shape,
+                                                        animal_type=animal_type,
+                                                        head_orientations=head_orientations)
+    if is_prey:
+        agents = np.concatenate((prey, predators))
+    else:
+        agents = np.concatenate((predators, prey))
+
+    occluded = occ.compute_occluded_mask(agents=agents, animal_type=animal_type)
+    relevant_occluded = occluded[shape[0]:, :shape[0]]
+    perception_strengths[relevant_occluded.T] = 0
+    return perception_strengths

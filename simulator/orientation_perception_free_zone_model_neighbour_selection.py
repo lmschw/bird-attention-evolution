@@ -24,12 +24,28 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
     def __init__(self, num_agents, animal_type, domain_size, start_position, switch_type=None, switch_options=[], threshold=0,
                  num_previous_steps=100, stress_delta=0.05, num_ideal_neighbours=9, landmarks=[], noise_amplitude=0, 
                  social_weight=1, environment_weight=1, limit_turns=True, use_distant_dependent_zone_factors=True, 
-                 single_speed=True, neighbour_selection=None, k=None, visualize=True, visualize_vision_fields=0, 
+                 single_speed=True, speed_delta=0.001, neighbour_selection=None, k=None, visualize=True, visualize_vision_fields=0, 
                  follow=False, graph_freq=5, save_path_agents=None, save_path_centroid=None, iter=0):
-        super().__init__(num_agents, animal_type, domain_size, start_position, landmarks, noise_amplitude, 
-                         social_weight, environment_weight, limit_turns, use_distant_dependent_zone_factors, 
-                         single_speed, neighbour_selection, k, visualize, visualize_vision_fields, follow, 
-                         graph_freq, save_path_agents, save_path_centroid, iter)
+        super().__init__(num_agents=num_agents,
+                         animal_type=animal_type,
+                         domain_size=domain_size,
+                         start_position=start_position,
+                         landmarks=landmarks,
+                         noise_amplitude=noise_amplitude,
+                         social_weight=social_weight,
+                         environment_weight=environment_weight,
+                         limit_turns=limit_turns,
+                         use_distant_dependent_zone_factors=use_distant_dependent_zone_factors,
+                         single_speed=single_speed,
+                         speed_delta=speed_delta,
+                         neighbour_selection=neighbour_selection,
+                         k=k,
+                         visualize=visualize,
+                         visualize_vision_fields=visualize_vision_fields,
+                         follow=follow,
+                         graph_freq=graph_freq,
+                         save_path_agents=save_path_agents,
+                         save_path_centroid=save_path_centroid)
         self.switch_type = switch_type
         self.switch_options = switch_options
         if len(switch_options) > 0:
@@ -133,10 +149,10 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
         match neighbour_selection:
             case NeighbourSelectionMechanism.NEAREST:
                 dists = np.where(neighbours, distances, np.inf)
-                return np.argmin(dists, axis=1)[:k]
+                return np.flip(np.argsort(dists, axis=1))[:, :k]
             case NeighbourSelectionMechanism.FARTHEST:
                 dists = np.where(neighbours, distances, 0)
-                return np.argmax(dists, axis=1)[:k]
+                return np.argsort(dists, axis=1)[:, :k]
 
     def get_neighbours(self, vision_strengths, distances, decisions):
         neighbours = vision_strengths > 0
@@ -193,7 +209,7 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
         distances, angles = self.compute_distances_and_angles_conspecifics(agents)
         match_factors = self.compute_conspecific_match_factors(distances=distances)
         side_factors = self.compute_side_factors(angles, shape=(len(agents), len(agents)))
-        vision_strengths = self.compute_vision_strengths(distances=distances, angles=angles, shape=(len(agents), len(agents)))
+        vision_strengths = self.compute_vision_strengths(agents=agents, distances=distances, angles=angles, shape=(len(agents), len(agents)))
         neighbours = vision_strengths > 0
         stress_levels = self.compute_stress_levels(agents, neighbours)
         decisions = self.get_decisions(agents, neighbours, stress_levels)

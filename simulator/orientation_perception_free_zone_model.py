@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import shapely.ops as shpops
 from shapely import Point
+import copy
 
 import general.angle_conversion as ac
 import general.occlusion as occ
@@ -163,13 +164,23 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         """
         Computes the distances and bearings between the conspecifics.
         """
-        # Build meshgrid 
+        headings = agents[:, 2]
+
         pos_xs = agents[:, 0]
         pos_ys = agents[:, 1]
         xx1, xx2 = np.meshgrid(pos_xs, pos_xs)
         yy1, yy2 = np.meshgrid(pos_ys, pos_ys)
 
-        return self.compute_distances_and_angles(headings=agents[:,2], xx1=xx1, xx2=xx2, yy1=yy1, yy2=yy2)
+        x_diffs = xx1 - xx2
+        y_diffs = yy1 - yy2
+        distances = np.sqrt(np.multiply(x_diffs, x_diffs) + np.multiply(y_diffs, y_diffs))  
+        distances[distances > self.animal_type.sensing_range] = np.inf
+        distances[distances == 0.0] = np.inf
+        
+        headings = self.curr_agents[:, 2]
+        angles = np.arctan2(y_diffs, x_diffs) - headings[:, np.newaxis]
+
+        return distances, angles
     
     def compute_nearest_points_to_landmarks(self, agents):
         """
@@ -222,6 +233,8 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
 
         match_factors = np.where(repulsion_zone, rep_factors, match_factors)
         match_factors = np.where(attraction_zone, att_factors, match_factors)
+
+        np.fill_diagonal(match_factors, 0)
 
         return match_factors
     
@@ -337,7 +350,8 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         # add noise
         delta_orientations = delta_orientations + self.generate_noise()
 
-        new_orientations = ac.wrap_to_pi(agents[:,2] + delta_orientations)
+        ori = ac.wrap_to_pi(agents[:,2] + delta_orientations)
+        new_orientations = agents[:,2] + delta_orientations
 
         new_speeds = self.compute_speeds(agents=agents, distances=distances)
         return new_orientations, new_speeds

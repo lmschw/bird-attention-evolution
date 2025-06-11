@@ -72,7 +72,7 @@ class CouzinZoneModelSimulator(BaseSimulator):
         """
         Returns a boolean array representing which other agents are within the attraction zone
         """
-        return (distances >= self.animal_type.preferred_distance_left_right[0]) & (distances <= self.animal_type.sensing_range)
+        return (distances >= self.animal_type.preferred_distance_left_right[1]) & (distances <= self.animal_type.sensing_range)
     
     def get_repulsion_orientations(self, positions, neighbours):
         """
@@ -89,7 +89,9 @@ class CouzinZoneModelSimulator(BaseSimulator):
         rij = np.divide(bearings, bearings_norm, out=np.zeros_like(bearings), where=bearings_norm!=0) # prevents divide by zero
         rij_norm = np.linalg.norm(rij)
         orientations = -np.sum(np.divide(rij, rij_norm, out=np.zeros_like(rij), where=rij_norm!=0), axis=1) # prevents divide by zero
-        return ac.compute_angles_for_orientations(orientations=orientations)
+        angles = ac.compute_angles_for_orientations(orientations=orientations)
+        angles = np.where(neighbours == True, angles, np.zeros(len(angles)))
+        return angles
     
     def get_alignment_orientations(self, headings, neighbours):
         """
@@ -104,8 +106,10 @@ class CouzinZoneModelSimulator(BaseSimulator):
         orientations = orientations * neighbours_2d
         norm_aligned = np.linalg.norm(orientations, axis=1)
         new_orientations = np.sum(np.divide(orientations, norm_aligned, out=np.zeros_like(orientations), where=norm_aligned!=0), axis=1) # prevents divide by zero
-        return ac.compute_angles_for_orientations(orientations=new_orientations)
-    
+        angles = ac.compute_angles_for_orientations(orientations=new_orientations)
+        angles = np.where(neighbours == True, angles, np.zeros(len(angles)))
+        return angles
+     
     def get_attraction_orientations(self, positions, neighbours):
         """
         Computes the new orientation based on attraction for every agent.
@@ -121,8 +125,10 @@ class CouzinZoneModelSimulator(BaseSimulator):
         rij = np.divide(bearings, bearings_norm, out=np.zeros_like(bearings), where=bearings_norm!=0) # prevents divide by zero
         rij_norm = np.linalg.norm(rij)
         orientations = np.sum(np.divide(rij, rij_norm, out=np.zeros_like(rij), where=rij_norm!=0), axis=1) # prevents divide by zero
-        return ac.compute_angles_for_orientations(orientations=orientations)
-    
+        angles = ac.compute_angles_for_orientations(orientations=orientations)
+        angles = np.where(neighbours == True, angles, np.zeros(len(angles)))
+        return angles
+        
     def compute_new_orientations(self, agents):
         """
         Computes the new orientations based on the following logic:
@@ -163,7 +169,8 @@ class CouzinZoneModelSimulator(BaseSimulator):
         new_orientations = np.where((has_aligned & has_attracted), avg_orientations_aligned_attracted, new_orientations)
         new_orientations = np.where(has_repulsed, repulsion_orientations, new_orientations)
 
-        return new_orientations
+        new_orients = np.average(new_orientations, axis=1)
+        return new_orients
     
     def compute_new_positions(self, agents):
         """

@@ -25,7 +25,7 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionFamiliaritySimulator(O
     def __init__(self, num_agents, animal_type, domain_size, start_position, switch_type=None, switch_options=[], threshold=0,
                  num_previous_steps=100, stress_delta=0.05, num_ideal_neighbours=9, landmarks=[], noise_amplitude=0, 
                  social_weight=1, environment_weight=1, limit_turns=True, use_distant_dependent_zone_factors=True, 
-                 single_speed=True, neighbour_selection=None, k=None, visualize=True, visualize_vision_fields=0, 
+                 single_speed=True, speed_delta=0.001, neighbour_selection=None, k=None, visualize=True, visualize_vision_fields=0, 
                  follow=False, graph_freq=5, save_path_agents=None, save_path_centroid=None, iter=0, familiarity_weight=0.1):
         super().__init__(num_agents=num_agents,
                          animal_type=animal_type,
@@ -44,6 +44,7 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionFamiliaritySimulator(O
                          limit_turns=limit_turns,
                          use_distant_dependent_zone_factors=use_distant_dependent_zone_factors,
                          single_speed=single_speed,
+                         speed_delta=speed_delta,
                          neighbour_selection=neighbour_selection,
                          k=k,
                          visualize=visualize,
@@ -96,7 +97,7 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionFamiliaritySimulator(O
             self.current_step = t
 
             agents[:,0], agents[:,1] = self.compute_new_positions(agents=agents)      
-            agents[:,2], agents[:,4], agents[:,5] = self.compute_new_orientations_and_speeds(agents=agents)
+            agents[:,2], agents[:, 3], agents[:,4], agents[:,5] = self.compute_new_orientations_and_speeds(agents=agents)
             
             self.curr_agents = agents
 

@@ -18,7 +18,7 @@ Implementation of the orientation-perception-free zone model with landmarks.
 """
 
 REPULSION_FACTOR = 50
-SPEED_REDUCTION_FACTOR = 10
+SPEED_REDUCTION_FACTOR = 1
 
 class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
     def __init__(self, num_agents, animal_type, domain_size, start_position, landmarks=[],
@@ -338,7 +338,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         is_too_far = nearest_distances > self.animal_type.preferred_distance_front_back[1]
         is_too_close = nearest_distances < self.animal_type.preferred_distance_front_back[0]
         speeds = np.where(is_too_far, agents[:,3] + self.speed_delta, agents[:,3])
-        speeds = np.where(is_too_close, speeds - SPEED_REDUCTION_FACTOR * self.speed_delta, speeds)
+        speeds = np.where(is_too_close, agents[:,3] - SPEED_REDUCTION_FACTOR * self.speed_delta, speeds)
         return speeds
 
 

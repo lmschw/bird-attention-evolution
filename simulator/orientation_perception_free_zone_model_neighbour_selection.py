@@ -240,7 +240,8 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
         delta_orientations = delta_orientations + self.generate_noise()
 
         new_orientations = ac.wrap_to_pi(agents[:,2] + delta_orientations)
-        return new_orientations, decisions, stress_levels
+        new_speeds = self.compute_speeds(agents=agents, distances=distances)
+        return new_orientations, new_speeds, decisions, stress_levels
 
     def run(self, tmax, dt=1):
         """
@@ -257,7 +258,7 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionSimulator(OrientationP
             self.current_step = t
 
             agents[:,0], agents[:,1] = self.compute_new_positions(agents=agents)      
-            agents[:,2], agents[:,4], agents[:,5] = self.compute_new_orientations_and_speeds(agents=agents)
+            agents[:,2], agents[:, 3], agents[:,4], agents[:,5] = self.compute_new_orientations_and_speeds(agents=agents)
             
             self.curr_agents = agents
 

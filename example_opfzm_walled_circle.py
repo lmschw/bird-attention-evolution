@@ -4,7 +4,7 @@ from area_models.landmark import Landmark
 
 from shapely import Point, Polygon
 
-n_agents = 7
+n_agents = 5
 n_steps = 10000
 domain_size = (500, 500)
 noise_amplitude = 0
@@ -12,7 +12,7 @@ start_position = (25, 25)
 graph_freq = 10
 visualize = True
 visualize_vision_fields = 0
-follow = True
+follow = False
 single_speed = True
 animal_type = Pigeon()
 start_position = (domain_size[0]/2, domain_size[1]/2)
@@ -20,7 +20,7 @@ start_position = (domain_size[0]/2, domain_size[1]/2)
 dist_based_zone_factors = True
 
 social_weight = 0.4
-environment_weight = 0.6
+environment_weight = 1
 
 border = Landmark('', corners=[[1,1], [1, 49], [49, 49], [49,1], [1,1], [0,0], [50, 0], [50, 50], [0,50], [0,0]])
 wall_1 = Landmark('', [[20, 0], [20, 20], [25, 20], [25, 0]])

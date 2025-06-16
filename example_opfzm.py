@@ -2,15 +2,15 @@ from simulator.orientation_perception_free_zone_model import OrientationPercepti
 from animal_models.pigeon import Pigeon
 from area_models.landmark import Landmark
 
-n_agents = 15
+n_agents = 10
 n_steps = 10000
 domain_size = (500, 500)
 noise_amplitude = 0
-start_position = (250, 20)
+start_position = (250, 250)
 graph_freq = 10
 visualize = True
 visualize_vision_fields = 0
-follow = True
+follow = False
 single_speed = True
 speed_delta = 0.001
 animal_type = Pigeon()
@@ -28,6 +28,7 @@ landmark_3 = Landmark('3', corners=[[20, 20], [20, 25], [25, 25], [25, 20]])
 
 
 landmarks = [landmark_1, landmark_2, landmark_3]
+landmarks = []
 
 sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
                       animal_type=animal_type,

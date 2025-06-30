@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 import vision.perception_strength as pstrength
 from simulator.ae_simulator_with_perception_strength import ActiveElasticWithPerceptionStrengthSimulator
@@ -31,7 +32,7 @@ PERCEPTION_STRENGTH_MODIFIER = 5
 
 class ActiveElasticWithPerceptionStrengthWithLeaderRandomWalkSimulator(ActiveElasticWithPerceptionStrengthSimulator):
     def __init__(self, animal_type, num_agents, domain_size, start_position,
-                 landmarks=[], occlusion_active=True, visualize=True, follow=True, graph_freq=5):
+                 landmarks=[], occlusion_active=True, visualize=True, visualize_vision_fields=0, follow=True, graph_freq=5):
         """
         Params:
             - animal_type (Animal): the type of animal
@@ -49,6 +50,7 @@ class ActiveElasticWithPerceptionStrengthWithLeaderRandomWalkSimulator(ActiveEla
                          start_position=start_position,
                          landmarks=landmarks,
                          visualize=visualize,
+                         visualize_vision_fields=visualize_vision_fields,
                          follow=follow,
                          graph_freq=graph_freq)
         self.occlusion_active = occlusion_active
@@ -89,7 +91,7 @@ class ActiveElasticWithPerceptionStrengthWithLeaderRandomWalkSimulator(ActiveEla
         f_x = ALPHA * p_x + BETA * h_x 
         f_y = ALPHA * p_y + BETA * h_y 
         
-        return f_x, f_y, np.sum(perception_strengths_conspecifics, axis=1)
+        return f_x, f_y, np.sum(perception_strengths_conspecifics, axis=0)
     
     def update_agents(self):
         """
@@ -98,17 +100,23 @@ class ActiveElasticWithPerceptionStrengthWithLeaderRandomWalkSimulator(ActiveEla
         f_x, f_y, total_perception_strengths = self.compute_fi()
         u, w = self.compute_u_w(f_x, f_y)
 
+        cutoff = 0.1
+
         headings = self.curr_agents[:, 2]
-        headings = np.where(((total_perception_strengths == 0) & (self.leaders == 0)), np.random.random() * 2 * np.pi, headings)
+        headings = np.where(((total_perception_strengths < cutoff) & (self.leaders == 0)), np.random.random() * 2 * np.pi, headings)
+
 
         x_vel = np.multiply(u, np.cos(headings))
         y_vel = np.multiply(u, np.sin(headings))
 
+
         self.curr_agents[:, 0] = self.curr_agents[:, 0] + x_vel * DT
         self.curr_agents[:, 1] = self.curr_agents[:, 1] + y_vel * DT
         self.curr_agents[:, 2] = ac.wrap_to_pi(self.curr_agents[:, 2] + w * DT)
-        self.curr_agents[:,2] = np.where(((total_perception_strengths == 0) & (self.leaders == 1)), headings, self.curr_agents[:,2])
-
+        self.curr_agents[:, 2] = np.where(((total_perception_strengths < cutoff) & (self.leaders == 1)), headings, self.curr_agents[:,2])
+        self.leaders = total_perception_strengths < cutoff
+        print("there")
+        print("here")
 
 
 

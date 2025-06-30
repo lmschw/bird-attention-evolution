@@ -3,12 +3,12 @@ from simulator.ae_simulator_with_perception_strength import ActiveElasticWithPer
 
 n_agents = 10
 n_steps = 10000
-domain_size = (50, 50)
+domain_size = (10000, 10000)
 graph_freq = 10
 visualize = True
 follow = True
 animal_type = Pigeon()
-start_position = (10, 10)
+start_position = (5000, 5000)
 occlusion_active = False
 
 sim = ActiveElasticWithPerceptionStrengthSimulator(animal_type=animal_type, num_agents=n_agents, domain_size=domain_size,

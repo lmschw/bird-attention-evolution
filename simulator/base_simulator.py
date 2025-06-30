@@ -1,12 +1,13 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 import general.angle_conversion as ac
 
 class BaseSimulator:
     def __init__(self, animal_type, num_agents, domain_size, start_position, noise_amplitude=0, 
-                 landmarks=[], visualize=True, follow=True, graph_freq=5):
+                 landmarks=[], visualize=True, visualize_vision_fields=0, follow=True, graph_freq=5):
         """
         Params:
             - animal_type (Animal): the type of animal
@@ -25,6 +26,7 @@ class BaseSimulator:
         self.noise_amplitude = noise_amplitude
         self.landmarks = landmarks
         self.visualize = visualize
+        self.visualize_vision_fields = visualize_vision_fields
         self.follow = follow
         self.graph_freq = graph_freq
         self.curr_agents = None
@@ -49,6 +51,8 @@ class BaseSimulator:
         else:
             self.ax.set_xlim(0, self.domain_size[0])
             self.ax.set_ylim(0, self.domain_size[1])
+
+        self.colours = np.random.uniform(0, 1, (self.visualize_vision_fields, 3))
 
         return agents
     
@@ -87,6 +91,19 @@ class BaseSimulator:
         Redraws the visualization for the current positions and orientations of the agents.
         """
         self.ax.clear()
+
+        for i in range(self.visualize_vision_fields):
+            for focus_area in self.animal_type.focus_areas:
+                focus_angle = self.curr_agents[i,2]+ focus_area.azimuth_angle_position_horizontal + 2 * np.pi
+                start_angle = np.rad2deg(focus_angle - focus_area.angle_field_horizontal) 
+                end_angle = np.rad2deg(focus_angle + focus_area.angle_field_horizontal) 
+                if focus_area.comfortable_distance[1] == np.inf:
+                    distance = 1000
+                else:
+                    distance = focus_area.comfortable_distance[1]
+                #print(f"az={focus_area.azimuth_angle_position_horizontal}, h={focus_area.angle_field_horizontal}, o={ac.wrap_to_2_pi(agents[0,2])}, st={start_angle}, e={end_angle}")
+                wedge = mpatches.Wedge((self.curr_agents[i,0], self.curr_agents[i,1]), distance, start_angle, end_angle, ec="none", color=self.colours[i])
+                self.ax.add_patch(wedge)
 
         for landmark in self.landmarks:
             self.ax.add_patch(landmark.get_patch_for_display())

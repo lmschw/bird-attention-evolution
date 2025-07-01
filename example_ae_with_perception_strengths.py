@@ -1,14 +1,15 @@
 from animal_models.pigeon import Pigeon
 from simulator.ae_simulator_with_perception_strength import ActiveElasticWithPerceptionStrengthSimulator
+from animal_models.hawk import Hawk
 
 n_agents = 10
 n_steps = 10000
-domain_size = (10000, 10000)
+domain_size = (1000, 1000)
 graph_freq = 10
 visualize = True
 follow = True
-animal_type = Pigeon()
-start_position = (5000, 5000)
+animal_type = Hawk()
+start_position = (500, 500)
 occlusion_active = False
 
 sim = ActiveElasticWithPerceptionStrengthSimulator(animal_type=animal_type, num_agents=n_agents, domain_size=domain_size,

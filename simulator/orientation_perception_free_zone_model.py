@@ -17,7 +17,7 @@ from simulator.enum_neighbour_selection import NeighbourSelectionMechanism
 Implementation of the orientation-perception-free zone model with landmarks.
 """
 
-REPULSION_FACTOR = 50
+REPULSION_FACTOR = 1
 SPEED_REDUCTION_FACTOR = 1
 
 class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):

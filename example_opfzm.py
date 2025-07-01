@@ -5,12 +5,13 @@ from area_models.landmark import Landmark
 n_agents = 10
 n_steps = 10000
 domain_size = (500, 500)
-noise_amplitude = 0
+noise_amplitude = 0.1
 start_position = (250, 250)
 graph_freq = 10
 visualize = True
 visualize_vision_fields = 0
-follow = False
+visualize_ids = True
+follow = True
 single_speed = True
 speed_delta = 0.001
 animal_type = Pigeon()
@@ -19,7 +20,7 @@ start_position = (250, 250)
 dist_based_zone_factors = True
 occlusion_active = True
 
-social_weight = 1
+social_weight = 0.3
 environment_weight = 0
 
 landmark_1 = Landmark('1', corners=[[20, 10], [20, 15], [25, 15], [25, 10]])
@@ -43,6 +44,7 @@ sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
                       occlusion_active=occlusion_active,
                       visualize=visualize,
                       visualize_vision_fields=visualize_vision_fields,
+                      visualise_ids=visualize_ids,
                       follow=follow,
                       graph_freq=graph_freq)
 sim.run(tmax=n_steps)

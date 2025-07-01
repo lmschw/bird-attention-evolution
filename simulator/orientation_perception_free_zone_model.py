@@ -177,7 +177,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         distances[distances > self.animal_type.sensing_range] = np.inf
         distances[distances == 0.0] = np.inf
         
-        headings = self.curr_agents[:, 2]
+        headings = agents[:, 2]
         angles = np.arctan2(y_diffs, x_diffs) - headings[:, np.newaxis]
 
         return distances, angles

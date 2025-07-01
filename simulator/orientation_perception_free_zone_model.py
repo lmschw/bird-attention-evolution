@@ -24,7 +24,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
     def __init__(self, num_agents, animal_type, domain_size, start_position, landmarks=[],
                  noise_amplitude=0, social_weight=1, environment_weight=1, limit_turns=True, 
                  use_distant_dependent_zone_factors=True, single_speed=True, speed_delta=0.001, neighbour_selection=None, 
-                 k=None, occlusion_active=False, visualize=True, visualize_vision_fields=0, follow=False, graph_freq=5, 
+                 k=None, occlusion_active=False, visualize=True, visualize_vision_fields=0, visualise_ids=False, follow=False, graph_freq=5, 
                  save_path_agents=None, save_path_centroid=None, iter=0):
         """
         Params:
@@ -63,6 +63,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         self.k = k
         self.occlusion_active = occlusion_active
         self.visualize_vision_fields = visualize_vision_fields
+        self.visualize_ids = visualise_ids
         self.save_path_agents = save_path_agents
         self.save_path_centroid = save_path_centroid
         self.iter = iter
@@ -114,6 +115,9 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
         self.ax.quiver(agents[:, 0], agents[:, 1],
                     uv_coords[:, 0], uv_coords[:, 1],
                     color="white", width=0.005, scale=40)
+        
+        for i in range(self.num_agents):
+            plt.text(agents[i,0],agents[i,1], i, color="white")
 
         # Draw Trajectory
         if len(self.centroid_trajectory) > 1:

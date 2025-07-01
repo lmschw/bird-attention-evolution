@@ -30,7 +30,7 @@ An implementation of Active Elastic including perception strengths.
 
 class ActiveElasticWithPerceptionStrengthSimulator(ActiveElasticSimulator):
     def __init__(self, animal_type, num_agents, domain_size, start_position,
-                 landmarks=[], occlusion_active=True, visualize=True, visualize_vision_fields=0, follow=True, graph_freq=5):
+                 landmarks=[], occlusion_active=True, visualize=True, visualize_vision_fields=0, visualize_ids=False, follow=True, graph_freq=5):
         """
         Params:
             - animal_type (Animal): the type of animal
@@ -49,6 +49,7 @@ class ActiveElasticWithPerceptionStrengthSimulator(ActiveElasticSimulator):
                          landmarks=landmarks,
                          visualize=visualize,
                          visualize_vision_fields=visualize_vision_fields,
+                         visualize_ids=visualize_ids,
                          follow=follow,
                          graph_freq=graph_freq)
         self.occlusion_active = occlusion_active

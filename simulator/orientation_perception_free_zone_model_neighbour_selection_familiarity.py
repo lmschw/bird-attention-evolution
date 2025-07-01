@@ -26,7 +26,7 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionFamiliaritySimulator(O
                  num_previous_steps=100, stress_delta=0.05, num_ideal_neighbours=9, landmarks=[], noise_amplitude=0, 
                  social_weight=1, environment_weight=1, limit_turns=True, use_distant_dependent_zone_factors=True, 
                  single_speed=True, speed_delta=0.001, neighbour_selection=None, k=None, visualize=True, visualize_vision_fields=0, 
-                 follow=False, graph_freq=5, save_path_agents=None, save_path_centroid=None, iter=0, familiarity_weight=0.1):
+                 visualize_ids=False, follow=False, graph_freq=5, save_path_agents=None, save_path_centroid=None, iter=0, familiarity_weight=0.1):
         super().__init__(num_agents=num_agents,
                          animal_type=animal_type,
                          domain_size=domain_size,
@@ -49,6 +49,7 @@ class OrientationPerceptionFreeZoneModelNeighbourSelectionFamiliaritySimulator(O
                          k=k,
                          visualize=visualize,
                          visualize_vision_fields=visualize_vision_fields,
+                         visualize_ids=visualize_ids,
                          follow=follow,
                          graph_freq=graph_freq,
                          save_path_agents=save_path_agents,

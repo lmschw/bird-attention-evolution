@@ -10,7 +10,7 @@ Implementation of the Vicsek model with perception strengths.
 
 class VicsekWithPerceptionStrengthSimulator(VicsekSimulator):
     def __init__(self, animal_type, num_agents, domain_size, start_position, 
-                 noise_amplitude, landmarks=[], visualize=True, follow=True, graph_freq=5):
+                 noise_amplitude, landmarks=[], visualize=True, visualize_ids=False, follow=True, graph_freq=5):
         """
         Params:
             - animal_type (Animal): the type of animal 
@@ -29,6 +29,7 @@ class VicsekWithPerceptionStrengthSimulator(VicsekSimulator):
                          landmarks=landmarks,
                          noise_amplitude=noise_amplitude,
                          visualize=visualize,
+                         visualize_ids=visualize_ids,
                          follow=follow,
                          graph_freq=graph_freq)
 

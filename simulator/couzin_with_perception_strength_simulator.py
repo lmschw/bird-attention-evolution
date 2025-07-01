@@ -12,7 +12,7 @@ Implements Couzin et al.'s zone model with added perception strength.
 class CouzinZoneModelWithPerceptionStrengthSimulator(CouzinZoneModelSimulator):
     def __init__(self, animal_type, num_agents, domain_size, start_position,
                  noise_amplitude, landmarks=[],
-                 visualize=True, follow=True, graph_freq=5):
+                 visualize=True, visualize_ids=False, follow=True, graph_freq=5):
         """
         Params:
             - animal_type (Animal): the type of animal
@@ -31,6 +31,7 @@ class CouzinZoneModelWithPerceptionStrengthSimulator(CouzinZoneModelSimulator):
                          noise_amplitude=noise_amplitude,
                          landmarks=landmarks,
                          visualize=visualize,
+                         visualise_ids=visualize_ids,
                          follow=follow,
                          graph_freq=graph_freq)
 

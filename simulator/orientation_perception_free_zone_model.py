@@ -50,6 +50,8 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
                     start_position=start_position,
                     noise_amplitude=noise_amplitude,
                     visualize=visualize,
+                    visualize_vision_fields=visualize_vision_fields,
+                    visualize_ids=visualise_ids,
                     follow=follow,
                     graph_freq=graph_freq)
         self.landmarks = landmarks

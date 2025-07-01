@@ -7,7 +7,7 @@ import general.angle_conversion as ac
 
 class BaseSimulator:
     def __init__(self, animal_type, num_agents, domain_size, start_position, noise_amplitude=0, 
-                 landmarks=[], visualize=True, visualize_vision_fields=0, follow=True, graph_freq=5):
+                 landmarks=[], visualize=True, visualize_vision_fields=0, visualize_ids=False, follow=True, graph_freq=5):
         """
         Params:
             - animal_type (Animal): the type of animal
@@ -27,6 +27,7 @@ class BaseSimulator:
         self.landmarks = landmarks
         self.visualize = visualize
         self.visualize_vision_fields = visualize_vision_fields
+        self.visualize_ids = visualize_ids
         self.follow = follow
         self.graph_freq = graph_freq
         self.curr_agents = None
@@ -113,6 +114,11 @@ class BaseSimulator:
         self.ax.quiver(self.curr_agents[:, 0], self.curr_agents[:, 1],
                     np.cos(self.curr_agents[:, 2]), np.sin(self.curr_agents[:, 2]),
                     color="white", width=0.005, scale=40)
+        
+        if self.visualize_ids:
+            for i in range(self.num_agents):
+                plt.text(self.curr_agents[i,0]-0.5,self.curr_agents[i,1]-0.5, i, color="white")
+
         
         self.ax.set_facecolor((0, 0, 0))
         # Draw Trajectory

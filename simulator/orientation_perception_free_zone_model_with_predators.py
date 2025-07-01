@@ -19,8 +19,8 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
                  start_position_predator, pack_hunting=False, landmarks=[], noise_amplitude=0, social_weights=[1,1], environment_weights=[1,1],
                  other_type_weights=[1,1], limit_turns=True, use_distant_dependent_zone_factors=True, single_speed=True, 
                  neighbour_selection=None, k=None, occlusion_active=False,
-                 kill=True, killing_frenzy=False, visualize=True, visualize_vision_fields_prey=0, visualize_vision_fields_predator=0, follow=False, 
-                 graph_freq=5, save_path_agents=None, save_path_centroid=None, iter=0):
+                 kill=True, killing_frenzy=False, visualize=True, visualize_vision_fields_prey=0, visualize_vision_fields_predator=0, 
+                 visualize_ids=False, follow=False, graph_freq=5, save_path_agents=None, save_path_centroid=None, iter=0):
         """
         Params:
             - num_prey (int): the number of prey animals within the domain
@@ -61,6 +61,7 @@ class OrientationPerceptionFreeZoneModelSimulatorWithPredators(OrientationPercep
                          occlusion_active=occlusion_active,
                          visualize=visualize,
                          visualize_vision_fields=visualize_vision_fields_prey,
+                         visualise_ids=visualize_ids,
                          follow=follow,
                          graph_freq=graph_freq,
                          save_path_agents=save_path_agents,

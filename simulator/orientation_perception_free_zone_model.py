@@ -116,8 +116,9 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
                     uv_coords[:, 0], uv_coords[:, 1],
                     color="white", width=0.005, scale=40)
         
-        for i in range(self.num_agents):
-            plt.text(agents[i,0]-0.5,agents[i,1]-0.5, i, color="white")
+        if self.visualize_ids:
+            for i in range(self.num_agents):
+                plt.text(agents[i,0]-0.5,agents[i,1]-0.5, i, color="white")
 
         # Draw Trajectory
         if len(self.centroid_trajectory) > 1:

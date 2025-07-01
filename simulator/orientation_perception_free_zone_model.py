@@ -117,7 +117,7 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
                     color="white", width=0.005, scale=40)
         
         for i in range(self.num_agents):
-            plt.text(agents[i,0],agents[i,1], i, color="white")
+            plt.text(agents[i,0]-0.5,agents[i,1]-0.5, i, color="white")
 
         # Draw Trajectory
         if len(self.centroid_trajectory) > 1:

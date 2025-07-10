@@ -293,9 +293,12 @@ class OrientationPerceptionFreeZoneModelSimulator(BaseSimulator):
             if self.neighbour_selection == NeighbourSelectionMechanism.NEAREST:
                 dists = np.where(neighbours, distances, np.inf)
                 selected = np.argmin(dists, axis=1)[:self.k]
-            else:
+            elif self.neighbour_selection == NeighbourSelectionMechanism.FARTHEST:
                 dists = np.where(neighbours, distances, 0)
                 selected = np.argmax(dists, axis=1)[:self.k]
+            else:
+                selected = neighbours
+
             new_neighbours = np.full((self.num_agents, self.num_agents), False)
             new_neighbours[selected] = True
             neighbours = new_neighbours

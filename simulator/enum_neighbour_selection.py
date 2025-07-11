@@ -5,4 +5,5 @@ Contains all the different ways of selecting a subset of neighbours from all pos
 """
 class NeighbourSelectionMechanism(str, Enum):
     NEAREST = "N",
-    FARTHEST = "F"
+    FARTHEST = "F",
+    CLOSEST_TO_FOVEA = "CF"

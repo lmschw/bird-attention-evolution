@@ -27,11 +27,20 @@ weight_options = [WeightOptions.CLOSEST_DISTANCES,
                   WeightOptions.NUM_VISIBLE_AGENTS,
                   WeightOptions.PREVIOUS_HEAD_ANGLES,
                   WeightOptions.AVG_PERCEPTION_STRENGTHS]
+weight_options = [
+                  WeightOptions.NUM_VISIBLE_AGENTS,
+                  WeightOptions.PREVIOUS_HEAD_ANGLES,
+                  WeightOptions.AVG_PERCEPTION_STRENGTHS,
+                  WeightOptions.RANDOM
+                  ]
+
 weight_size = len(weight_options)
 output_size = 1
 weights = [0.04894279039946401,0.00667812943656855,0.10353310279886091,0.21765670588565983,0.20047645873708853,0.20505610685669823,0.21765670588565983]
-
+weights = [0.39596527306173807,0.1855120139679633,0.0,0.22048889245999842,0.0,0.1980338205103001,0.0]
 #weights = [0, 0, 0, 0, 0, 0, 0]
+weights = [0.        , 0.55099151, 0.39299221, 0.]
+weights = [0.2993414370229348,0.48112946287530073,0.21952910010176444,0.0]
 
 nn = NeuralNetwork()
 fully_connected_layer = FullyConnectedLayer(input_size=weight_size, output_size=output_size)

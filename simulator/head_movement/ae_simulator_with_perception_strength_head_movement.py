@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 import general.normalisation as normal
 import general.angle_conversion as ac
@@ -32,8 +34,9 @@ An implementation of Active Elastic including perception strengths.
 """
 
 class ActiveElasticWithPerceptionStrengthAndHeadMovementSimulator(ActiveElasticSimulator):
-    def __init__(self, animal_type, num_agents, domain_size, start_position,
-                 model, weight_options, landmarks=[], visualize=True, follow=True, graph_freq=5):
+    def __init__(self, animal_type, num_agents, domain_size, start_position, 
+                 model, weight_options, landmarks=[], visualize=True, follow=True, 
+                 visualize_head_direction=False, visualize_vision_fields=False, graph_freq=5):
         """
         Params:
             - animal_type (Animal): the type of animal
@@ -55,6 +58,8 @@ class ActiveElasticWithPerceptionStrengthAndHeadMovementSimulator(ActiveElasticS
                          graph_freq=graph_freq)
         self.model = model
         self.weight_options = weight_options
+        self.visualize_head_direction = visualize_head_direction
+        self.visualize_vision_fields = visualize_vision_fields
 
     def init_agents(self):
         base = super().init_agents()
@@ -66,6 +71,62 @@ class ActiveElasticWithPerceptionStrengthAndHeadMovementSimulator(ActiveElasticS
         self.curr_agents = np.column_stack([pos_xs, pos_ys, pos_hs, head_angles])
 
         return self.curr_agents
+
+    def graph_agents(self):
+        """
+        Redraws the visualization for the current positions and orientations of the agents.
+        """  
+        self.ax.clear()
+
+        for i in range(self.visualize_vision_fields):
+            for focus_area in self.animal_type.focus_areas:
+                focus_angle = self.curr_agents[i,2] + self.curr_agents[i,3] + focus_area.azimuth_angle_position_horizontal + 2 * np.pi
+                start_angle = np.rad2deg(focus_angle - focus_area.angle_field_horizontal) 
+                end_angle = np.rad2deg(focus_angle + focus_area.angle_field_horizontal) 
+                if focus_area.comfortable_distance[1] == np.inf:
+                    distance = 1000
+                else:
+                    distance = focus_area.comfortable_distance[1]
+                #print(f"az={focus_area.azimuth_angle_position_horizontal}, h={focus_area.angle_field_horizontal}, o={ac.wrap_to_2_pi(agents[0,2])}, st={start_angle}, e={end_angle}")
+                wedge = mpatches.Wedge((self.curr_agents[i,0], self.curr_agents[i,1]), distance, start_angle, end_angle, ec="none", color='blue', alpha=0.2)
+                self.ax.add_patch(wedge)
+
+
+        for landmark in self.landmarks:
+            self.ax.add_patch(landmark.get_patch_for_display())
+            self.ax.annotate(landmark.id, landmark.get_annotation_point(), color="white")
+
+        # Draw agents
+        uv_coords = ac.compute_u_v_coordinates_for_angles(self.curr_agents[:,2])
+        uv_coords_head = ac.compute_u_v_coordinates_for_angles(self.curr_agents[:,2] + self.curr_agents[:,3])
+
+        self.ax.scatter(self.curr_agents[:, 0], self.curr_agents[:, 1], color="white", s=15)
+
+        self.ax.quiver(self.curr_agents[:, 0], self.curr_agents[:, 1],
+                    uv_coords[:, 0], uv_coords[:, 1],
+                    color="white", width=0.005, scale=40)
+        
+        if self.visualize_head_direction:
+            self.ax.quiver(self.curr_agents[:, 0], self.curr_agents[:, 1],
+                        uv_coords_head[:, 0], uv_coords_head[:, 1],
+                        color="yellow", width=0.005, scale=50)
+
+        # Draw Trajectory
+        if len(self.centroid_trajectory) > 1:
+            x_traj, y_traj = zip(*self.centroid_trajectory)
+            self.ax.plot(x_traj, y_traj, color="orange")
+
+        self.ax.set_facecolor((0, 0, 0))
+
+        centroid_x, centroid_y = np.mean(self.curr_agents[:, 0]), np.mean(self.curr_agents[:, 1])
+        if self.follow:
+            self.ax.set_xlim(centroid_x-10, centroid_x+10)
+            self.ax.set_ylim(centroid_y-10, centroid_y+10)
+        else:
+            self.ax.set_xlim(0, self.domain_size[0])
+            self.ax.set_ylim(0, self.domain_size[1])
+
+        plt.pause(0.000001)
 
     def get_pi_elements(self, distances_conspecifics, angles_conspecifics, perception_strengths_conspecifics):
         """

@@ -184,7 +184,7 @@ class OrientationPerceptionFreeZoneModelWithHeadMovementSimulator(OrientationPer
         vision_strengths = self.compute_vision_strengths(head_orientations=agents[:,4], distances=distances, angles=angles, shape=(self.num_agents, len(self.landmarks)))
         return np.sum(match_factors * side_factors * vision_strengths, axis=1)
 
-    def compute_new_orientations(self, agents):
+    def compute_new_orientations_and_speeds(self, agents):
         """
         Computes the new orientations and head orientations for all agents.
         """
@@ -221,7 +221,7 @@ class OrientationPerceptionFreeZoneModelWithHeadMovementSimulator(OrientationPer
 
             agents[:,0], agents[:,1] = self.compute_new_positions(agents=agents)
             self.agents = agents
-            agents[:,2], agents[:,4] = self.compute_new_orientations(agents=agents)
+            agents[:,2], agents[:,4] = self.compute_new_orientations_and_speeds(agents=agents)
 
             if not (self.current_step % self.graph_freq) and self.visualize and self.current_step > 0:
                 self.graph_agents(agents=agents)

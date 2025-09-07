@@ -31,7 +31,8 @@ An implementation of Active Elastic
 
 class ActiveElasticSimulator(BaseSimulator):
     def __init__(self, animal_type, num_agents, domain_size, start_position, 
-                 landmarks=[], visualize=True, follow=True, graph_freq=5):
+                 landmarks=[], visualize=True, visualize_vision_fields=0, visualize_ids=False, 
+                 follow=True, graph_freq=5):
         """
         Params:
             - animal_type (Animal): the type of animal
@@ -48,11 +49,13 @@ class ActiveElasticSimulator(BaseSimulator):
                          start_position=start_position,
                          landmarks=landmarks,
                          visualize=visualize,
+                         visualize_vision_fields=visualize_vision_fields,
+                         visualize_ids=visualize_ids,
                          follow=follow,
                          graph_freq=graph_freq)
         
     def initialize(self):
-        self.sigmas = np.full(self.num_agents, SIGMA)
+        self.sigmas = np.full(self.num_agents, np.average(self.animal_type.preferred_distance_left_right))
         return super().initialize()
 
     def get_pi_elements(self, distances, angles):

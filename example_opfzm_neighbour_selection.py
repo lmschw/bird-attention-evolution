@@ -11,7 +11,7 @@ start_position = (250, 20)
 graph_freq = 10
 visualize = True
 visualize_vision_fields = 0
-follow = False
+follow = True
 single_speed = True
 animal_type = Pigeon()
 start_position = (250, 250)
@@ -27,6 +27,7 @@ landmark_3 = Landmark('3', corners=[[20, 20], [20, 25], [25, 25], [25, 20]])
 
 
 landmarks = [landmark_1, landmark_2, landmark_3]
+landmarks = []
 
 sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
                       animal_type=animal_type,
@@ -37,8 +38,8 @@ sim = OrientationPerceptionFreeZoneModelSimulator(num_agents=n_agents,
                       social_weight=social_weight,
                       environment_weight=environment_weight,
                       single_speed=single_speed,
-                      neighbour_selection=NeighbourSelectionMechanism.NEAREST,
-                      k=5,
+                      neighbour_selection=NeighbourSelectionMechanism.CLOSEST_TO_FOVEA,
+                      k=2,
                       visualize=visualize,
                       visualize_vision_fields=visualize_vision_fields,
                       follow=follow,

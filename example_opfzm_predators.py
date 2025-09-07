@@ -38,6 +38,7 @@ other_type_weights = [0.5, 0.5]
 
 kill = True
 killing_frenzy = False
+occlusion_active = True
 
 sim = OrientationPerceptionFreeZoneModelSimulatorWithPredators(num_prey=num_prey,
                                    animal_type_prey=animal_type_prey,
@@ -56,6 +57,7 @@ sim = OrientationPerceptionFreeZoneModelSimulatorWithPredators(num_prey=num_prey
                                    single_speed=single_speed,
                                    kill=kill,
                                    killing_frenzy=killing_frenzy,
+                                   occlusion_active=occlusion_active,
                                    visualize=visualize,
                                    visualize_vision_fields_prey=visualize_vision_fields_prey,
                                    visualize_vision_fields_predator=visualize_vision_fields_predator,

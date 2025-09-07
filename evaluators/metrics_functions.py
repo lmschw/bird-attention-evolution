@@ -16,6 +16,14 @@ def compute_global_order(agents):
     sum_orientation = np.sum(orientations[np.newaxis,:,:],axis=1)
     return np.divide(np.sqrt(np.sum(sum_orientation**2,axis=1)), len(orientations))[0]
 
+def compute_local_orders(agents, neighbours):
+    """
+    Computes the global order within a group of agents
+    """
+    orientations = ac.compute_u_v_coordinates_for_angles(agents[:,2])
+    sumOrientation = np.sum(neighbours[:,:,np.newaxis]*orientations[np.newaxis,:,:],axis=1)
+    return np.divide(np.sqrt(np.sum(sumOrientation**2,axis=1)), np.count_nonzero(neighbours, axis=1))
+
 def compute_cohesion(agents, animal_type, normalised=False):
     """
     Computes the average distance to the centroid in order to measure cohesion

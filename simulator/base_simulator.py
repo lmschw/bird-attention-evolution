@@ -1,12 +1,13 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 import general.angle_conversion as ac
 
 class BaseSimulator:
     def __init__(self, animal_type, num_agents, domain_size, start_position, noise_amplitude=0, 
-                 landmarks=[], visualize=True, follow=True, graph_freq=5):
+                 landmarks=[], visualize=True, visualize_vision_fields=0, visualize_ids=False, follow=True, graph_freq=5):
         """
         Params:
             - animal_type (Animal): the type of animal
@@ -25,6 +26,8 @@ class BaseSimulator:
         self.noise_amplitude = noise_amplitude
         self.landmarks = landmarks
         self.visualize = visualize
+        self.visualize_vision_fields = visualize_vision_fields
+        self.visualize_ids = visualize_ids
         self.follow = follow
         self.graph_freq = graph_freq
         self.curr_agents = None
@@ -50,6 +53,8 @@ class BaseSimulator:
             self.ax.set_xlim(0, self.domain_size[0])
             self.ax.set_ylim(0, self.domain_size[1])
 
+        self.colours = np.random.uniform(0, 1, (self.visualize_vision_fields, 3))
+
         return agents
     
     def init_agents(self):
@@ -70,7 +75,7 @@ class BaseSimulator:
         pos_xs = self.start_position[0] + xx.ravel() + (rng.random(n_points_x * n_points_y) * spacing * 0.5) - spacing * 0.25
         pos_ys = self.start_position[1] + yy.ravel() + (rng.random(n_points_x * n_points_y) * spacing * 0.5) - spacing * 0.25
         pos_hs = (rng.random(n_points_x * n_points_x) * 2 * np.pi) - np.pi
-
+        #pos_hs = np.full(len(pos_xs), np.pi)
         indices = np.random.choice(range(len(pos_xs)), self.num_agents, replace=False)
         pos_xs = pos_xs[indices]
         pos_ys = pos_ys[indices]
@@ -88,6 +93,19 @@ class BaseSimulator:
         """
         self.ax.clear()
 
+        for i in range(self.visualize_vision_fields):
+            for focus_area in self.animal_type.focus_areas:
+                focus_angle = self.curr_agents[i,2]+ focus_area.azimuth_angle_position_horizontal + 2 * np.pi
+                start_angle = np.rad2deg(focus_angle - focus_area.angle_field_horizontal) 
+                end_angle = np.rad2deg(focus_angle + focus_area.angle_field_horizontal) 
+                if focus_area.comfortable_distance[1] == np.inf:
+                    distance = 1000
+                else:
+                    distance = focus_area.comfortable_distance[1]
+                #print(f"az={focus_area.azimuth_angle_position_horizontal}, h={focus_area.angle_field_horizontal}, o={ac.wrap_to_2_pi(agents[0,2])}, st={start_angle}, e={end_angle}")
+                wedge = mpatches.Wedge((self.curr_agents[i,0], self.curr_agents[i,1]), distance, start_angle, end_angle, ec="none", color=self.colours[i])
+                self.ax.add_patch(wedge)
+
         for landmark in self.landmarks:
             self.ax.add_patch(landmark.get_patch_for_display())
             self.ax.annotate(landmark.id, landmark.get_annotation_point(), color="white")
@@ -97,9 +115,20 @@ class BaseSimulator:
                     np.cos(self.curr_agents[:, 2]), np.sin(self.curr_agents[:, 2]),
                     color="white", width=0.005, scale=40)
         
-        self.ax.set_facecolor((0, 0, 0))
+        if self.visualize_ids:
+            for i in range(self.num_agents):
+                plt.text(self.curr_agents[i,0]-0.5,self.curr_agents[i,1]-0.5, i, color="white")
 
+        
+        self.ax.set_facecolor((0, 0, 0))
+        # Draw Trajectory
+        if len(self.centroid_trajectory) > 1:
+            x_traj, y_traj = zip(*self.centroid_trajectory)
+            self.ax.plot(x_traj, y_traj, color="orange")
+
+        self.ax.set_facecolor((0, 0, 0))
         centroid_x, centroid_y = np.mean(self.curr_agents[:, 0]), np.mean(self.curr_agents[:, 1])
+        print(centroid_x, centroid_y)
         if self.follow:
             self.ax.set_xlim(centroid_x-10, centroid_x+10)
             self.ax.set_ylim(centroid_y-10, centroid_y+10)

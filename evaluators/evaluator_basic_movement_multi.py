@@ -14,11 +14,12 @@ Evaluation plots:
 """
 
 class EvaluatorBasicMovementMulti:
-    def __init__(self, data_file_paths, data_labels, base_save_path, animal_types, max_iters=None):
+    def __init__(self, data_file_paths, data_labels, base_save_path, animal_types, min_iters=None, max_iters=None):
         self.data_file_paths = data_file_paths
         self.data_labels = data_labels
         self.base_save_path = base_save_path
         self.animal_types = animal_types
+        self.min_iters = min_iters
         self.max_iters = max_iters
 
         self.data = self.load_data()
@@ -26,7 +27,7 @@ class EvaluatorBasicMovementMulti:
     def load_data(self):
         data = []
         for path in self.data_file_paths:
-            data.append(logger.load_log_data(path, max_iters=self.max_iters))
+            data.append(logger.load_log_data(path, min_iters=self.min_iters, max_iters=self.max_iters))
         return data
 
     def evaluate_and_visualise(self, metrics, normalise_cohesion=False):
